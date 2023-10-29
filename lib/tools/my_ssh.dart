@@ -1,5 +1,4 @@
 import 'package:dartssh2/dartssh2.dart';
-import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -31,7 +30,7 @@ SshServerInfo loadSshServerInfoFromPref (SharedPreferences pref) {
     );
 }
 
-Future<List> SshTryServer(SshServerInfo serverInfo) async {
+Future<List> sshTryServer(SshServerInfo serverInfo) async {
   String? result;
   bool success = false;
   try {
@@ -56,7 +55,7 @@ Future<List> SshTryServer(SshServerInfo serverInfo) async {
   return [success, result];
 }
 
-Future<List> SshConnectServer(SshServerInfo serverInfo) async {
+Future<List> sshConnectServer(SshServerInfo serverInfo) async {
   String? result;
   bool success = false;
   try {
@@ -83,7 +82,7 @@ Future<List> SshConnectServer(SshServerInfo serverInfo) async {
   }
 }
 
-Future<List> SshSendCommand(SSHClient client, String command) async {
+Future<List> sshSendCommand(SSHClient client, String command) async {
   String? result;
   bool success = false;
   try {
@@ -97,7 +96,7 @@ Future<List> SshSendCommand(SSHClient client, String command) async {
   return [success, result];
 }
 
-Future<List> SshDisconnectServer(SSHClient client) async {
+Future<List> sshDisconnectServer(SSHClient client) async {
   String? result;
   bool success = false;
   try {
@@ -112,7 +111,7 @@ Future<List> SshDisconnectServer(SSHClient client) async {
   return [success, result];
 }
 
-Future<List> SftpReceiveFile(SSHClient client, String remoteFile, String localFile) async {
+Future<List> sftpReceiveFile(SSHClient client, String remoteFile, String localFile) async {
   String? result;
   bool success = false;
   try {
@@ -129,16 +128,52 @@ Future<List> SftpReceiveFile(SSHClient client, String remoteFile, String localFi
   return [success, result];
 }
 
-Future<String> saveToLocal(String content) async {
+Future<List> sftpUploadFile(SSHClient client, String localFile, String remoteFile) async {
   String? result;
+  bool success = false;
   try {
-    final directory = await getApplicationCacheDirectory();
-    var file = File('${directory.path}/test.txt');
-    print(content);
-    file.writeAsString(content);
-    result = directory.path;
+    final sftp = await client.sftp();
+    final file = await sftp.open(
+      remoteFile,
+      mode: SftpFileOpenMode.truncate | SftpFileOpenMode.write,
+    );
+    await file.write(File(localFile).openRead().cast()).done;
+    success = true;
   } catch (err) {
     result = err.toString();
+    success = false;
   }
-  return result;
+  return [success, result];
 }
+
+// 列出远程文件夹下的文件
+// final items = await sftp.listdir('/');
+//
+// for (final item in items) {
+//   print(item.longname);
+//   print('${item.filename} (${item.attr.type?.name})');
+// }
+
+// 远程文件状态
+// final stat = await sftp.stat('/usr');
+// print(stat.size);
+// print(stat.mode);
+
+
+
+
+
+
+// Future<String> saveToLocal(String content) async {
+//   String? result;
+//   try {
+//     final directory = await getApplicationCacheDirectory();
+//     var file = File('${directory.path}/test.txt');
+//     print(content);
+//     file.writeAsString(content);
+//     result = directory.path;
+//   } catch (err) {
+//     result = err.toString();
+//   }
+//   return result;
+// }

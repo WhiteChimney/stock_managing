@@ -31,10 +31,10 @@ class MyApp extends StatelessWidget {
 Future<SharedPreferences> initUserProfile() async {
   SharedPreferences pref = await SharedPreferences.getInstance();
 
-  await pref.setString('ip', '192.168.50.17');
-  await pref.setInt('port', 22);
-  await pref.setString('username', 'noland');
-  await pref.setString('password', 'zxh12345');
+  if (pref.getString('ip') == null) await pref.setString('ip', '131theater.tpddns.cn');
+  if (pref.getInt('port') == null) await pref.setInt('port', 13117);
+  if (pref.getString('username') == null) await pref.setString('username', 'noland');
+  if (pref.getString('password') == null) await pref.setString('password', 'zxh12345');
 
   return pref;
 }

@@ -120,7 +120,7 @@ class _SettingsPageState extends State<SettingsPage> {
               padding: const EdgeInsets.all(8.0),
               child: ElevatedButton(
                 onPressed: () async {
-                  var result = await SshTryServer(serverInfo);
+                  var result = await sshTryServer(serverInfo);
                   final snackBar = SnackBar(content: Text(result[1]));
                   if (!context.mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(snackBar);

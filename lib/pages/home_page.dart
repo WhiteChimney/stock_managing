@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:stock_managing/tools/my_ssh.dart';
-import 'add_item.dart';
+import 'add_item_page.dart';
 import 'settings_page.dart';
 import 'about_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -93,7 +93,7 @@ class _MyHomePageState extends State<MyHomePage> {
           Navigator.push(
               context, MaterialPageRoute(builder: (context) => AddItemPage()));
         },
-        tooltip: 'Increment',
+        tooltip: '添加物品',
         child: const Icon(Icons.add),
       ),
     );
