@@ -31,87 +31,102 @@ SshServerInfo loadSshServerInfoFromPref (SharedPreferences pref) {
     );
 }
 
-Future<String> tryServer(SshServerInfo serverInfo) async {
-  final socket = await SSHSocket.connect(
-    serverInfo.ip,
-    serverInfo.port,
-  );
-
-  final client = SSHClient(
-    socket,
-    username: serverInfo.username,
-    onPasswordRequest: () => serverInfo.password,
-  );
-
+Future<List> SshTryServer(SshServerInfo serverInfo) async {
   String? result;
+  bool success = false;
   try {
+    final socket = await SSHSocket.connect(
+      serverInfo.ip,
+      serverInfo.port,
+    );
+    final client = SSHClient(
+      socket,
+      username: serverInfo.username,
+      onPasswordRequest: () => serverInfo.password,
+    );
     final uptime = await client.run('uptime');
-    result = utf8.decode(uptime);
+    result = '连接成功！服务器运行信息：\n${utf8.decode(uptime)}';
     client.close();
     await client.done;
+    success = true;
   } catch (err) {
-    result = err.toString();
+    result = '连接失败！错误信息：\n${err.toString()}';
+    success = false;
   }
-
-  return result;
+  return [success, result];
 }
 
-Future<List> connectServer() async {
-  final socket = await SSHSocket.connect('192.168.50.17', 22);
-
-  final client = SSHClient(
-    socket,
-    username: 'noland',
-    identities: [
-      ...SSHKeyPair.fromPem(
-          await File('C:/Users/79082/.ssh/id_ecdsa').readAsString())
-    ],
-  );
-
+Future<List> SshConnectServer(SshServerInfo serverInfo) async {
   String? result;
+  bool success = false;
   try {
-    await client.run('uptime');
-    result = 'successfully connected';
+    final socket = await SSHSocket.connect(serverInfo.ip, serverInfo.port);
+
+    final client = SSHClient(
+      socket,
+      username: serverInfo.username,
+      // identities: [
+      //   ...SSHKeyPair.fromPem(
+      //       await File('C:/Users/79082/.ssh/id_ecdsa').readAsString())
+      // ],
+      onPasswordRequest: () => serverInfo.password,
+    );
+    
+    var msg = await client.run('uptime');
+    result = utf8.decode(msg);
+    success = true;
+    return [success, client, result];
   } catch (err) {
     result = err.toString();
+    success = false;
+    return [success, null, result];
   }
-  return [result, client];
 }
 
-Future<String> sendCommand(String command, SSHClient client) async {
+Future<List> SshSendCommand(SSHClient client, String command) async {
   String? result;
+  bool success = false;
   try {
     final msg = await client.run(command);
     result = utf8.decode(msg);
+    success = true;
   } catch (err) {
     result = err.toString();
+    success = false;
   }
-  return result;
+  return [success, result];
 }
 
-Future<String> disconnectServer(SSHClient client) async {
+Future<List> SshDisconnectServer(SSHClient client) async {
   String? result;
+  bool success = false;
   try {
     client.close();
     await client.done;
     result = 'successfully closed.';
+    success = true;
   } catch (err) {
     result = err.toString();
+    success = false;
   }
-  return result;
+  return [success, result];
 }
 
-Future<String> receiveTestFile(SSHClient client) async {
+Future<List> SftpReceiveFile(SSHClient client, String remoteFile, String localFile) async {
   String? result;
+  bool success = false;
   try {
     final sftp = await client.sftp();
-    final file = await sftp.open('/home/noland/test.txt');
-    final content = await file.readBytes();
-    result = latin1.decode(content);
+    final fRemote = await sftp.open(remoteFile);
+    final content = await fRemote.readBytes();
+    final fLocal = File(localFile);
+    fLocal.writeAsBytes(content);
+    success = true;
   } catch (err) {
     result = err.toString();
+    success = false;
   }
-  return result;
+  return [success, result];
 }
 
 Future<String> saveToLocal(String content) async {

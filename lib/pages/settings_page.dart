@@ -19,6 +19,8 @@ class _SettingsPageState extends State<SettingsPage> {
   final textUsernameController = TextEditingController();
   final textPasswordController = TextEditingController();
 
+  bool infoChanged = false;
+
   @override
   void dispose() {
     // Clean up the controller when the widget is disposed.
@@ -38,7 +40,7 @@ class _SettingsPageState extends State<SettingsPage> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: (){
-            Navigator.pop(context);
+            Navigator.pop(context, infoChanged);
           },),
         title: const Text('Settings'),
       ),
@@ -59,7 +61,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   child: TextField(
                     decoration: InputDecoration(
                       border: OutlineInputBorder(),
-                      hintText: 'IP',
+                      hintText: serverInfo.ip,
                     ),
                     controller: textIpController,
                     ),
@@ -73,7 +75,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   child: TextField(
                     decoration: InputDecoration(
                       border: OutlineInputBorder(),
-                      hintText: '端口号',
+                      hintText: serverInfo.port.toString(),
                     ),
                     controller: textPortController,
                     ),
@@ -87,7 +89,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   child: TextField(
                     decoration: InputDecoration(
                       border: OutlineInputBorder(),
-                      hintText: '用户名',
+                      hintText: serverInfo.username,
                     ),
                     controller: textUsernameController,
                     ),
@@ -101,7 +103,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   child: TextField(
                     decoration: InputDecoration(
                       border: OutlineInputBorder(),
-                      hintText: '密码',
+                      hintText: serverInfo.password,
                     ),
                     controller: textPasswordController,
                     ),
@@ -110,33 +112,58 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
             Padding(
               padding: const EdgeInsets.all(8.0),
-              child: ElevatedButton(onPressed: (){
-                if (textIpController.text != '') {
-                  serverInfo.ip = textIpController.text;
-                } else {
-                  setStringToTextController(textIpController, serverInfo.ip);
-                }
-                int? port = int.tryParse(textPortController.text);
-                if (port != null) {
-                  serverInfo.port = port;
-                } else {
-                  setStringToTextController(textPortController, serverInfo.port.toString());
-                }
-                if (textUsernameController.text != '') {
-                  serverInfo.username = textUsernameController.text;
-                } else {
-                  setStringToTextController(textUsernameController, serverInfo.username);
-                }
-                if (textPasswordController.text != '') {
-                  serverInfo.password = textPasswordController.text;
-                } else {
-                  setStringToTextController(textPasswordController, serverInfo.password);
-                }
-              }, child: Text('提交')),
+              child: ElevatedButton(
+                onPressed: ()async{infoChanged = await updateServerInfoInTextfield(serverInfo);}, 
+                child: Text('保存')),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: ElevatedButton(
+                onPressed: () async {
+                  var result = await SshTryServer(serverInfo);
+                  final snackBar = SnackBar(content: Text(result[1]));
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                }, 
+                child: Text('测试服务器连接情况')),
             ),
           ],
         ),
       ),
     );
+  }
+
+  Future<bool> updateServerInfoInTextfield(SshServerInfo serverInfo) async {
+    bool infoChanged = false;
+    if (textIpController.text != '') {
+      serverInfo.ip = textIpController.text;
+      await widget.pref.setString('ip', serverInfo.ip);
+      infoChanged = true;
+    } else {
+      setStringToTextController(textIpController, serverInfo.ip);
+    }
+    int? port = int.tryParse(textPortController.text);
+    if (port != null) {
+      serverInfo.port = port;
+      await widget.pref.setInt('port', serverInfo.port);
+      infoChanged = true;
+    } else {
+      setStringToTextController(textPortController, serverInfo.port.toString());
+    }
+    if (textUsernameController.text != '') {
+      serverInfo.username = textUsernameController.text;
+      await widget.pref.setString('username', serverInfo.username);
+      infoChanged = true;
+    } else {
+      setStringToTextController(textUsernameController, serverInfo.username);
+    }
+    if (textPasswordController.text != '') {
+      serverInfo.password = textPasswordController.text;
+      await widget.pref.setString('password', serverInfo.password);
+      infoChanged = true;
+    } else {
+      setStringToTextController(textPasswordController, serverInfo.password);
+    }
+    return infoChanged;
   }
 }
