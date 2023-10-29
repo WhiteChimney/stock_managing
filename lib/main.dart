@@ -1,12 +1,13 @@
+import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:dartssh2/dartssh2.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
+import 'add_item.dart';
 
-
-void main() {
+void main() async {
   runApp(const MyApp());
 }
 
@@ -44,18 +45,18 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<String> tryServer() async {
     final socket = await SSHSocket.connect(
-      // '192.168.50.17', 
+      // '192.168.50.17',
       'lqcc301.ddns.net',
       // '210.45.114.213',
       // 22,
       30109,
-      );
+    );
 
     final client = SSHClient(
       socket,
       // username: 'noland',
       // identities: [
-        // ...SSHKeyPair.fromPem(await File('C:/Users/79082/.ssh/id_ecdsa').readAsString())
+      // ...SSHKeyPair.fromPem(await File('C:/Users/79082/.ssh/id_ecdsa').readAsString())
       // ],
       username: 'root',
       onPasswordRequest: () => 'zxh12345ZXH',
@@ -71,20 +72,18 @@ class _MyHomePageState extends State<MyHomePage> {
       result = err.toString();
     }
 
-
     return result;
   }
 
   Future<List> connectServer() async {
-    final socket = await SSHSocket.connect(
-      '192.168.50.17', 22
-      );
+    final socket = await SSHSocket.connect('192.168.50.17', 22);
 
     final client = SSHClient(
       socket,
       username: 'noland',
       identities: [
-        ...SSHKeyPair.fromPem(await File('C:/Users/79082/.ssh/id_ecdsa').readAsString())
+        ...SSHKeyPair.fromPem(
+            await File('C:/Users/79082/.ssh/id_ecdsa').readAsString())
       ],
     );
 
@@ -95,11 +94,11 @@ class _MyHomePageState extends State<MyHomePage> {
     } catch (err) {
       result = err.toString();
     }
-    return [result,client];
+    return [result, client];
   }
 
   Future<String> sendCommand(String command, SSHClient client) async {
-    String ? result;
+    String? result;
     try {
       final msg = await client.run(command);
       result = utf8.decode(msg);
@@ -108,9 +107,9 @@ class _MyHomePageState extends State<MyHomePage> {
     }
     return result;
   }
-  
+
   Future<String> disconnectServer(SSHClient client) async {
-    String ? result;
+    String? result;
     try {
       client.close();
       await client.done;
@@ -120,9 +119,9 @@ class _MyHomePageState extends State<MyHomePage> {
     }
     return result;
   }
-  
+
   Future<String> receiveTestFile(SSHClient client) async {
-    String ? result;
+    String? result;
     try {
       final sftp = await client.sftp();
       final file = await sftp.open('/home/noland/test.txt');
@@ -135,7 +134,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<String> saveToLocal() async {
-    String ? result;
+    String? result;
     try {
       final directory = await getApplicationCacheDirectory();
       var file = File('${directory.path}/test.txt');
@@ -164,29 +163,29 @@ class _MyHomePageState extends State<MyHomePage> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
         actions: [
-          IconButton(
-            onPressed: (){}, 
-            icon: const Icon(Icons.search)
-            ),
+          IconButton(onPressed: () {}, icon: const Icon(Icons.search)),
         ],
       ),
       drawer: Drawer(
         child: ListView(
           children: [
-            DrawerHeader(child: Column(
-              children: [
-                Text('当前用户'),
-                Text('Noland'),
-              ],
-            ),),
+            DrawerHeader(
+              child: Column(
+                children: [
+                  Text('当前用户'),
+                  Text('Noland'),
+                ],
+              ),
+            ),
             ListTile(
-              title: Text('设置'), 
-              onTap: (){
+              title: Text('设置'),
+              onTap: () {
                 print('用户想要设置');
               },
             ),
-            ListTile(title: Text('关于'),
-              onTap: (){
+            ListTile(
+              title: Text('关于'),
+              onTap: () {
                 print('用户想要关于');
               },
             ),
@@ -199,14 +198,13 @@ class _MyHomePageState extends State<MyHomePage> {
           children: [
             Text(sshResult),
             ElevatedButton(
-              onPressed: () async {
-                String res = await tryServer();
-                setState(() {
-                  sshResult = res;
-                });
-              },
-              child: Text('test')
-            ),
+                onPressed: () async {
+                  String res = await tryServer();
+                  setState(() {
+                    sshResult = res;
+                  });
+                },
+                child: Text('test')),
             Padding(
               padding: const EdgeInsets.all(18.0),
               child: Text(sshReturn),
@@ -231,56 +229,57 @@ class _MyHomePageState extends State<MyHomePage> {
                       sshReturn = res[0];
                       client1 = res[1];
                     });
-                  }, 
+                  },
                   child: Text('connect'),
                 ),
                 ElevatedButton(
-                  child: Text('disconnect'), 
+                  child: Text('disconnect'),
                   onPressed: () async {
                     String res = await disconnectServer(client1);
                     setState(() {
                       sshReturn = res;
                     });
-                  }, 
+                  },
                 ),
                 ElevatedButton(
-                  child: Text('send'), 
+                  child: Text('send'),
                   onPressed: () async {
-                    String res = await sendCommand(myController.text,client1);
+                    String res = await sendCommand(myController.text, client1);
                     setState(() {
                       sshReturn = res;
                     });
-                  }, 
+                  },
                 ),
               ],
             ),
             Padding(
               padding: const EdgeInsets.all(20.0),
               child: ElevatedButton(
-                onPressed: () async {
-                  String res = await receiveTestFile(client1);
-                  setState(() {
-                    sshReturn = res;
-                  });
-                }, 
-                child: Text('receive')
-                ),
+                  onPressed: () async {
+                    String res = await receiveTestFile(client1);
+                    setState(() {
+                      sshReturn = res;
+                    });
+                  },
+                  child: Text('receive')),
             ),
             Padding(
               padding: const EdgeInsets.all(20.0),
               child: ElevatedButton(
-                onPressed: () async {
-                  String res = await saveToLocal();
-                  print(res);
-                }, 
-                child: Text('save')
-                ),
+                  onPressed: () async {
+                    String res = await saveToLocal();
+                    print(res);
+                  },
+                  child: Text('save')),
             ),
           ],
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: (){},
+        onPressed: () {
+          Navigator.push(
+              context, MaterialPageRoute(builder: (context) => AddItemPage()));
+        },
         tooltip: 'Increment',
         child: const Icon(Icons.add),
       ),
