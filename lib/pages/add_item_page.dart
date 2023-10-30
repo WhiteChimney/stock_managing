@@ -6,18 +6,17 @@ import 'package:stock_managing/tools/my_cameras.dart';
 import 'package:file_picker/file_picker.dart';
 
 class AddItemPage extends StatefulWidget {
-
   @override
   State<AddItemPage> createState() => _AddItemPageState();
 }
 
 class _AddItemPageState extends State<AddItemPage> {
-  List<String> items = ['one','two','three','one','two','three','one'];
+  List<String> items = ['one', 'two', 'three', 'one', 'two', 'three', 'one'];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
+      appBar: AppBar(
           backgroundColor: Theme.of(context).colorScheme.inversePrimary,
           title: Text('添加物品'),
           actions: [
@@ -25,35 +24,32 @@ class _AddItemPageState extends State<AddItemPage> {
           ],
           leading: IconButton(
             icon: Icon(Icons.arrow_back),
-            onPressed: (){
+            onPressed: () {
               Navigator.pop(context);
             },
-          )
-        ),
-        body: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: ElevatedButton(
-                      onPressed: getPictures,
-                      child: Text('添加照片')),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: ElevatedButton(
-                        onPressed: readPicInfo,
-                        child: Text('添加附件')),
-                  ),
-                ],
-              ),
+          )),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: ElevatedButton(
+                      onPressed: getPictures, child: Text('添加照片')),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: ElevatedButton(
+                      onPressed: readPicInfo, child: Text('添加附件')),
+                ),
+              ],
             ),
-            Expanded(
-              child: ListView.builder(
+          ),
+          Expanded(
+            child: ListView.builder(
                 itemCount: items.length,
                 itemBuilder: (context, index) {
                   final item = items[index];
@@ -62,35 +58,34 @@ class _AddItemPageState extends State<AddItemPage> {
                       padding: const EdgeInsets.all(18.0),
                       child: Text(item),
                     ),
-                    onTap: (){
+                    onTap: () {
                       items.removeAt(index);
                       setState(() {});
                     },
                   );
-                }
-              ),
-            ),
-          ],
-        ),
+                }),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: addEntry,
+        tooltip: '添加条目',
+        child: const Icon(Icons.playlist_add),
+      ),
+    );
+  }
 
-        floatingActionButton: FloatingActionButton(
-          onPressed: () {},
-          tooltip: '添加条目',
-          child: const Icon(Icons.playlist_add),
-        ),
-      );
+  void addEntry() {
+    items.add('ooo');
+    setState(() {});
   }
 
   void getPictures() async {
     if (Platform.isIOS || Platform.isAndroid) {
       CameraDescription camera = await getCamera();
       if (!context.mounted) return;
-      Navigator.push(
-          context,
-          MaterialPageRoute(
-              builder: (_) => TakePictureScreen(camera: camera)
-            )
-          );
+      Navigator.push(context,
+          MaterialPageRoute(builder: (_) => TakePictureScreen(camera: camera)));
     } else {
       FilePickerResult? result = await FilePicker.platform.pickFiles();
 
@@ -103,9 +98,8 @@ class _AddItemPageState extends State<AddItemPage> {
       }
     }
   }
-  
+
   void readPicInfo() async {
-    
     if (Platform.isIOS || Platform.isAndroid) {
       late String fileName;
       try {
@@ -126,9 +120,9 @@ class _AddItemPageState extends State<AddItemPage> {
         print(err);
         return;
       }
-    
+
       if (!context.mounted) return;
-    
+
       // If the picture was taken, display it on a new screen.
       await Navigator.of(context).push(
         MaterialPageRoute(
@@ -142,5 +136,5 @@ class _AddItemPageState extends State<AddItemPage> {
     } else {
       print('Sorry, not supported. ');
     }
-  } 
+  }
 }

@@ -13,7 +13,6 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-
   final textIpController = TextEditingController();
   final textPortController = TextEditingController();
   final textUsernameController = TextEditingController();
@@ -39,93 +38,96 @@ class _SettingsPageState extends State<SettingsPage> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: (){
+          onPressed: () {
             Navigator.pop(context, infoChanged);
-          },),
+          },
+        ),
         title: const Text('Settings'),
       ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Text('服务器 IP 地址或域名'),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: TextField(
-                    decoration: InputDecoration(
-                      border: OutlineInputBorder(),
-                      hintText: serverInfo.ip,
+            Expanded(
+              child: ListView(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text('服务器 IP 地址或域名'),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: TextField(
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(),
+                        hintText: serverInfo.ip,
+                      ),
+                      controller: textIpController,
                     ),
-                    controller: textIpController,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text('端口号（默认为 22）'),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: TextField(
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(),
+                        hintText: serverInfo.port.toString(),
+                      ),
+                      controller: textPortController,
                     ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Text('端口号（默认为 22）'),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: TextField(
-                    decoration: InputDecoration(
-                      border: OutlineInputBorder(),
-                      hintText: serverInfo.port.toString(),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text('用户名'),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: TextField(
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(),
+                        hintText: serverInfo.username,
+                      ),
+                      controller: textUsernameController,
                     ),
-                    controller: textPortController,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text('密码'),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: TextField(
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(),
+                        hintText: serverInfo.password,
+                      ),
+                      controller: textPasswordController,
                     ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Text('用户名'),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: TextField(
-                    decoration: InputDecoration(
-                      border: OutlineInputBorder(),
-                      hintText: serverInfo.username,
-                    ),
-                    controller: textUsernameController,
-                    ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Text('密码'),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: TextField(
-                    decoration: InputDecoration(
-                      border: OutlineInputBorder(),
-                      hintText: serverInfo.password,
-                    ),
-                    controller: textPasswordController,
-                    ),
-                ),
-              ],
+                  ),
+                ],
+              ),
             ),
             Padding(
-              padding: const EdgeInsets.all(8.0),
+              padding: const EdgeInsets.all(20.0),
               child: ElevatedButton(
-                onPressed: ()async{infoChanged = await updateServerInfoInTextfield(serverInfo);}, 
-                child: Text('保存')),
+                  onPressed: () async {
+                    infoChanged = await updateServerInfoInTextfield(serverInfo);
+                  },
+                  child: Text('保存')),
             ),
             Padding(
-              padding: const EdgeInsets.all(8.0),
+              padding: const EdgeInsets.only(bottom: 100.0),
               child: ElevatedButton(
-                onPressed: () async {
-                  var result = await sshTryServer(serverInfo);
-                  final snackBar = SnackBar(content: Text(result[1]));
-                  if (!context.mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(snackBar);
-                }, 
-                child: Text('测试服务器连接情况')),
+                  onPressed: () async {
+                    var result = await sshTryServer(serverInfo);
+                    final snackBar = SnackBar(content: Text(result[1]));
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                  },
+                  child: Text('测试服务器连接情况')),
             ),
           ],
         ),
