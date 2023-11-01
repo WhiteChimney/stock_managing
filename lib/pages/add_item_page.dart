@@ -1,5 +1,6 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as path;
 import 'dart:io';
 import 'dart:convert';
 import 'package:path_provider/path_provider.dart';
@@ -13,6 +14,7 @@ class AddItemPage extends StatefulWidget {
 }
 
 class _AddItemPageState extends State<AddItemPage> {
+  TextEditingController idController = TextEditingController();
   List<TextEditingController> nameControllers = [];
   List<TextEditingController> contentControllers = [];
 
@@ -45,27 +47,43 @@ class _AddItemPageState extends State<AddItemPage> {
               Navigator.pop(context);
             },
           )),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: ElevatedButton(
-                      onPressed: addPictures, child: Text('添加照片')),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: ElevatedButton(
-                      onPressed: addOtherFiles, child: Text('添加附件')),
-                ),
-              ],
+      body: CustomScrollView(
+        slivers: <Widget>[
+          SliverToBoxAdapter(
+            child: TextField(
+              maxLines: 1,
+              decoration: InputDecoration(
+                icon: Icon(Icons.perm_identity),
+                border: UnderlineInputBorder(),
+                hintText: '唯一标识符，例如：AFG_3252_20231001_001',
+                labelText: '物品 ID',
+                errorText: '名称中只能包含字母、数字与下划线',
+              ),
+              controller: idController,
             ),
           ),
-          SizedBox(
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: ElevatedButton(
+                        onPressed: addPictures, child: Text('添加照片')),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: ElevatedButton(
+                        onPressed: addOtherFiles, child: Text('添加附件')),
+                  ),
+                ],
+              ),
+            )
+          ),
+          SliverToBoxAdapter(
+            child: SizedBox(
             height: 200,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
@@ -74,33 +92,27 @@ class _AddItemPageState extends State<AddItemPage> {
                 return Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: generatePictureWidget(picPaths[index]),
-                  );
+                );
               }),
+            ),
           ),
-          SizedBox(
-            height: 100,
-            child: ListView.builder(
-              // scrollDirection: Axis.horizontal,
-              itemCount: filePaths.length,
-              itemBuilder: (context, index) {
-                return Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: generateFilesWidget(filePaths[index]),
-                  );
-              }),
+          SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (BuildContext context, int index) {
+                return generateFilesWidget(filePaths[index]);
+              },
+              childCount: filePaths.length,
+            ),
           ),
-          Expanded(
-            child: ListView.builder(
-                itemCount: nameControllers.length,
-                itemBuilder: (context, index) {
-                  return Padding(
-                      padding: const EdgeInsets.all(18.0),
-                      child: 
-                      generateEntryWidget(
+          SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (BuildContext context, int index) {
+                return generateEntryWidget(
                         nameControllers[index],
-                        contentControllers[index]),
-                    );
-                }),
+                        contentControllers[index]);
+              },
+              childCount: nameControllers.length,
+            ),
           ),
         ],
       ),
@@ -165,18 +177,6 @@ class _AddItemPageState extends State<AddItemPage> {
     setState(() {});
   }
 
-  void saveItemInfo() async {
-    Map<String,dynamic> json = {};
-    for (int index = 0; index < nameControllers.length; index++) {
-      json[nameControllers[index].text] = contentControllers[index].text;
-    }
-
-    final directory = await getApplicationCacheDirectory();
-    var fWrite = File('${directory.path}/json_test.json');
-    var contents = jsonEncode(json);
-    fWrite.writeAsString(contents);
-  }
-
   void addPictures() async {
     if (Platform.isIOS || Platform.isAndroid) {
       CameraDescription camera = await getCamera();
@@ -226,13 +226,38 @@ class _AddItemPageState extends State<AddItemPage> {
   Row generateFilesWidget(String filePath) {
     return Row(
       children: [
+        Icon(Icons.file_present),
+        SizedBox(
+          child: Text(filePath), 
+          width: MediaQuery.of(context).size.width-64,),
         IconButton(onPressed: (){
           filePaths.remove(filePath);
           setState(() {});
         }, icon: Icon(Icons.delete),),
-        SizedBox(child: Text(filePath), width: MediaQuery.of(context).size.width-56,),
       ],
     );
+  }
+
+  void saveItemInfo() async {
+    if (idController.text == '') return;
+    var cacheDir = await getApplicationCacheDirectory();
+    var userDir = path.join(cacheDir.path,'noland');
+    var stockingDir = path.join(userDir,'stockings');
+    var itemsDir = path.join(stockingDir,'items');
+    var imgDir = path.join(itemsDir,idController.text,'images');
+    var fileDir = path.join(itemsDir,idController.text,'files');
+    await Directory(imgDir).create(recursive: true);
+    await Directory(fileDir).create(recursive: true);
+    
+    // var directory = await Directory('dir/subdir').create(recursive: true);
+
+    // Map<String,dynamic> json = {};
+
+
+    // final directory = 
+    // var fWrite = File('${directory.path}/json_test.json');
+    // var contents = jsonEncode(json);
+    // fWrite.writeAsString(contents);
   }
 
 }
