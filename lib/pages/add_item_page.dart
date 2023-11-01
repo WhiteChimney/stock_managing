@@ -39,7 +39,12 @@ class _AddItemPageState extends State<AddItemPage> {
           backgroundColor: Theme.of(context).colorScheme.inversePrimary,
           title: Text('添加物品'),
           actions: [
-            IconButton(onPressed: saveItemInfo, icon: const Icon(Icons.check)),
+            IconButton(
+                onPressed: () {
+                  saveItemInfo();
+                  Navigator.pop(context);
+                },
+                icon: const Icon(Icons.check)),
           ],
           leading: IconButton(
             icon: Icon(Icons.arrow_back),
@@ -63,37 +68,36 @@ class _AddItemPageState extends State<AddItemPage> {
             ),
           ),
           SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: ElevatedButton(
-                        onPressed: addPictures, child: Text('添加照片')),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: ElevatedButton(
-                        onPressed: addOtherFiles, child: Text('添加附件')),
-                  ),
-                ],
-              ),
-            )
-          ),
+              child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: ElevatedButton(
+                      onPressed: addPictures, child: Text('添加照片')),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: ElevatedButton(
+                      onPressed: addOtherFiles, child: Text('添加附件')),
+                ),
+              ],
+            ),
+          )),
           SliverToBoxAdapter(
             child: SizedBox(
-            height: 200,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: picPaths.length,
-              itemBuilder: (context, index) {
-                return Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: generatePictureWidget(picPaths[index]),
-                );
-              }),
+              height: 200,
+              child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: picPaths.length,
+                  itemBuilder: (context, index) {
+                    return Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: generatePictureWidget(picPaths[index]),
+                    );
+                  }),
             ),
           ),
           SliverList(
@@ -108,8 +112,7 @@ class _AddItemPageState extends State<AddItemPage> {
             delegate: SliverChildBuilderDelegate(
               (BuildContext context, int index) {
                 return generateEntryWidget(
-                        nameControllers[index],
-                        contentControllers[index]);
+                    nameControllers[index], contentControllers[index]);
               },
               childCount: nameControllers.length,
             ),
@@ -124,49 +127,47 @@ class _AddItemPageState extends State<AddItemPage> {
     );
   }
 
-  Column generateEntryWidget(
-    TextEditingController nameController, 
-    TextEditingController contentController) {
-    return 
-      Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: TextField(
-              maxLines: 1,
-              decoration: InputDecoration(
-                icon: Icon(Icons.bookmark),
-                border: UnderlineInputBorder(),
-                hintText: '条目名称',
-              ),
-              controller: nameController,
+  Column generateEntryWidget(TextEditingController nameController,
+      TextEditingController contentController) {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: TextField(
+            maxLines: 1,
+            decoration: InputDecoration(
+              icon: Icon(Icons.bookmark),
+              border: UnderlineInputBorder(),
+              hintText: '条目名称',
             ),
+            controller: nameController,
           ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: TextField(
-              minLines: 2,
-              maxLines: 5,
-              decoration: InputDecoration(
-                icon: Icon(Icons.assignment_outlined),
-                border: OutlineInputBorder(),
-                hintText: '条目内容',
-              ),
-              controller: contentController,
+        ),
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: TextField(
+            minLines: 2,
+            maxLines: 5,
+            decoration: InputDecoration(
+              icon: Icon(Icons.assignment_outlined),
+              border: OutlineInputBorder(),
+              hintText: '条目内容',
             ),
+            controller: contentController,
           ),
-          IconButton(
-            icon: Icon(Icons.delete),
-            onPressed: () {
-              nameController.dispose();
-              nameControllers.remove(nameController);
-              contentController.dispose();
-              contentControllers.remove(contentController);
-              setState(() {});
-            },
-          )
-        ],
-      );
+        ),
+        IconButton(
+          icon: Icon(Icons.delete),
+          onPressed: () {
+            nameController.dispose();
+            nameControllers.remove(nameController);
+            contentController.dispose();
+            contentControllers.remove(contentController);
+            setState(() {});
+          },
+        )
+      ],
+    );
   }
 
   void addEntry() {
@@ -190,25 +191,30 @@ class _AddItemPageState extends State<AddItemPage> {
         picPaths.add(result.files.single.path.toString());
         print(picPaths);
         setState(() {});
-      } 
+      }
     }
   }
 
   Column generatePictureWidget(String picPath) {
     return Column(
       children: [
-        Image.file(File(picPath),
+        Image.file(
+          File(picPath),
           height: 144,
           errorBuilder:
-            (BuildContext context, Object exception, StackTrace? stackTrace) {
-              print('error occurred');
-              return Image(image: AssetImage('assets/images/image_loading_failed.png'));
-            },
-          ),
-        IconButton(onPressed: (){
-          picPaths.remove(picPath);
-          setState(() {});
-        }, icon: Icon(Icons.delete),),
+              (BuildContext context, Object exception, StackTrace? stackTrace) {
+            print('error occurred');
+            return Image(
+                image: AssetImage('assets/images/image_loading_failed.png'));
+          },
+        ),
+        IconButton(
+          onPressed: () {
+            picPaths.remove(picPath);
+            setState(() {});
+          },
+          icon: Icon(Icons.delete),
+        ),
       ],
     );
   }
@@ -228,12 +234,16 @@ class _AddItemPageState extends State<AddItemPage> {
       children: [
         Icon(Icons.file_present),
         SizedBox(
-          child: Text(filePath), 
-          width: MediaQuery.of(context).size.width-64,),
-        IconButton(onPressed: (){
-          filePaths.remove(filePath);
-          setState(() {});
-        }, icon: Icon(Icons.delete),),
+          child: Text(filePath),
+          width: MediaQuery.of(context).size.width - 64,
+        ),
+        IconButton(
+          onPressed: () {
+            filePaths.remove(filePath);
+            setState(() {});
+          },
+          icon: Icon(Icons.delete),
+        ),
       ],
     );
   }
@@ -241,23 +251,36 @@ class _AddItemPageState extends State<AddItemPage> {
   void saveItemInfo() async {
     if (idController.text == '') return;
     var cacheDir = await getApplicationCacheDirectory();
-    var userDir = path.join(cacheDir.path,'noland');
-    var stockingDir = path.join(userDir,'stockings');
-    var itemsDir = path.join(stockingDir,'items');
-    var imgDir = path.join(itemsDir,idController.text,'images');
-    var fileDir = path.join(itemsDir,idController.text,'files');
+    var userDir = path.join(cacheDir.path, 'noland');
+    var stockingDir = path.join(userDir, 'stockings');
+    var itemsDir = path.join(stockingDir, 'items');
+    var jsonDir = path.join(itemsDir, idController.text);
+    var imgDir = path.join(jsonDir, 'images');
+    var fileDir = path.join(jsonDir, 'files');
     await Directory(imgDir).create(recursive: true);
     await Directory(fileDir).create(recursive: true);
-    
-    // var directory = await Directory('dir/subdir').create(recursive: true);
 
-    // Map<String,dynamic> json = {};
+    print(imgDir);
 
+    String itemId = idController.text;
 
-    // final directory = 
-    // var fWrite = File('${directory.path}/json_test.json');
-    // var contents = jsonEncode(json);
-    // fWrite.writeAsString(contents);
+    for (int index = 0; index < picPaths.length; index++) {
+      var picRead = File(picPaths[index]);
+      var picExt = path.extension(picRead.path);
+      await picRead.copy(path.join(imgDir, '${itemId}_${index}${picExt}'));
+    }
+
+    for (int index = 0; index < filePaths.length; index++) {
+      var fileRead = File(filePaths[index]);
+      var fileBase = path.basename(fileRead.path);
+      await fileRead.copy(path.join(fileDir, fileBase));
+    }
+
+    Map<String, dynamic> json = {};
+    for (int index = 0; index < nameControllers.length; index++) {
+      json[nameControllers[index].text] = contentControllers[index].text;
+    }
+    var fWrite = File(path.join(jsonDir, '${itemId}.json'));
+    await fWrite.writeAsString(jsonEncode(json));
   }
-
 }
