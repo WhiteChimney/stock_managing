@@ -23,6 +23,7 @@ class _AddItemPageState extends State<AddItemPage> {
 
   @override
   void dispose() {
+    idController.dispose();
     for (final controller in nameControllers) {
       controller.dispose();
     }
@@ -182,8 +183,12 @@ class _AddItemPageState extends State<AddItemPage> {
     if (Platform.isIOS || Platform.isAndroid) {
       CameraDescription camera = await getCamera();
       if (!context.mounted) return;
-      Navigator.push(context,
+      final result = await Navigator.push(context,
           MaterialPageRoute(builder: (_) => TakePictureScreen(camera: camera)));
+      String picPath = result.path;
+      print(picPath);
+      picPaths.add(picPath);
+      setState(() {});
     } else {
       FilePickerResult? result = await FilePicker.platform.pickFiles();
 
@@ -282,5 +287,15 @@ class _AddItemPageState extends State<AddItemPage> {
     }
     var fWrite = File(path.join(jsonDir, '${itemId}.json'));
     await fWrite.writeAsString(jsonEncode(json));
+
+    var fMainJson = File(path.join(stockingDir, 'items.json'));
+    var mainJson = {};
+    if (!(await fMainJson.exists())) {
+      await fMainJson.create();
+    } else {
+      mainJson = jsonDecode(await fMainJson.readAsString());
+    }
+    mainJson[itemId] = 'aaa';
+    await fMainJson.writeAsString(jsonEncode(mainJson));
   }
 }

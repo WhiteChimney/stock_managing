@@ -9,6 +9,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
+import 'item_details_page.dart';
+import 'package:mime/mime.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title, required this.pref});
@@ -50,9 +52,8 @@ class _MyHomePageState extends State<MyHomePage> {
             ListTile(
               title: Text('设置'),
               onTap: () async {
-                final result = await Navigator.of(context).push(
-                    MaterialPageRoute(
-                        builder: (context) => SettingsPage(pref: widget.pref)));
+                await Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) => SettingsPage(pref: widget.pref)));
                 if (!context.mounted) return;
                 widget.pref.reload();
                 serverInfo = loadSshServerInfoFromPref(widget.pref);
@@ -98,8 +99,17 @@ class _MyHomePageState extends State<MyHomePage> {
       title: Text(itemsId[index]),
       subtitle: Text(itemsInfo[itemsId[index]]),
       trailing: Icon(Icons.keyboard_arrow_right_outlined),
-      onTap: () {
-        print(index);
+      onTap: () async {
+        List itemInfo = await generateItemInfo(index);
+        if (!context.mounted) return;
+        Navigator.of(context).push(MaterialPageRoute(
+            builder: (context) => ItemDetailsPage(
+                  itemId: itemsId[index],
+                  picList: itemInfo[0],
+                  fileList: itemInfo[1],
+                  json: itemInfo[2],
+                  keyList: itemInfo[3],
+                )));
       },
     ));
   }
@@ -117,5 +127,42 @@ class _MyHomePageState extends State<MyHomePage> {
     }
     print(itemsInfo);
     setState(() {});
+  }
+
+  Future<List> generateItemInfo(int index) async {
+    var cacheDir = await getApplicationCacheDirectory();
+    var itemDir = path.join(
+        cacheDir.path, 'noland', 'stockings', 'items', itemsId[index]);
+    var picDir = path.join(itemDir, 'images');
+    var picList = Directory(picDir).listSync();
+    List<FileSystemEntity> picListFinal = [];
+
+    for (var pic in picList) {
+      var mimetype = lookupMimeType(pic.path);
+      print(mimetype);
+      if (mimetype != null && mimetype.startsWith('image/')) {
+        picListFinal.add(pic);
+      }
+    }
+
+    var fileDir = path.join(itemDir, 'files');
+    var fileList = Directory(fileDir).listSync();
+    List<FileSystemEntity> fileListFinal = [];
+    for (var file in fileList) {
+      if (file is File) {
+        fileListFinal.add(file);
+      }
+    }
+
+    String itemJson = path.join(itemDir, '${itemsId[index]}.json');
+    var fJson = File(itemJson);
+    Map<String, dynamic> json = jsonDecode(await fJson.readAsString());
+    print(json);
+    List<String> keyList = [];
+    for (var key in json.keys) {
+      keyList.add(key);
+    }
+
+    return [picListFinal, fileListFinal, json, keyList];
   }
 }
