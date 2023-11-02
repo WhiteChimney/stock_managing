@@ -2,32 +2,33 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
 import 'dart:io';
-import 'dart:convert';
-import 'package:path_provider/path_provider.dart';
+// import 'dart:convert';
+// import 'package:path_provider/path_provider.dart';
 import 'package:stock_managing/tools/my_cameras.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:stock_managing/tools/data_processing.dart';
 // import 'package:json_annotation/json_annotation.dart;
 
-class AddItemPage extends StatefulWidget {
-  const AddItemPage({super.key, required this.itemId});
+class EditItemPage extends StatefulWidget {
+  const EditItemPage({super.key, required this.itemId});
   final String itemId;
   @override
-  State<AddItemPage> createState() => _AddItemPageState();
+  State<EditItemPage> createState() => _EditItemPageState();
 }
 
-class _AddItemPageState extends State<AddItemPage> {
+class _EditItemPageState extends State<EditItemPage> {
   TextEditingController idController = TextEditingController();
-  List<TextEditingController> nameControllers = [];
+  List<TextEditingController> labelControllers = [];
   List<TextEditingController> contentControllers = [];
 
+  Map<String,dynamic> json = {};
   List<String> picPaths = [];
   List<String> filePaths = [];
 
   @override
   void dispose() {
     idController.dispose();
-    for (final controller in nameControllers) {
+    for (final controller in labelControllers) {
       controller.dispose();
     }
     for (final controller in contentControllers) {
@@ -37,9 +38,25 @@ class _AddItemPageState extends State<AddItemPage> {
   }
 
   @override
-  void initState() async {
+  void initState() {
     super.initState();
+    if (widget.itemId != '') _loadData(widget.itemId);
+  }
+
+  void _loadData (String itemId) async {
     print(widget.itemId);
+    var itemInfo = await loadItemInfo(widget.itemId);
+    json = itemInfo[0];
+    picPaths = itemInfo[1];
+    filePaths = itemInfo[2];
+    setStringToTextController(idController, widget.itemId);
+    for (var key in json.keys) {
+      var labelController = TextEditingController(text: key);
+      var contentController = TextEditingController(text: json[key]);
+      labelControllers.add(labelController);
+      contentControllers.add(contentController);
+    }
+    setState(() {});
   }
 
   @override
@@ -51,9 +68,16 @@ class _AddItemPageState extends State<AddItemPage> {
           actions: [
             IconButton(
                 onPressed: () {
-                  saveItemInfo(idController, nameControllers,
-                      contentControllers, picPaths, filePaths);
-                  Navigator.pop(context);
+                  List<String> labelList = [];
+                  List<String> contentList = [];
+                  for (int i = 0; i < labelControllers.length; i++) {
+                    labelList.add(labelControllers[i].text);
+                    contentList.add(contentControllers[i].text);
+                  }
+                  saveItemInfo(idController.text, labelList,
+                      contentList, picPaths, filePaths);
+                  // Navigator.pop(context);
+                  Navigator.pushReplacementNamed(context, '/homePage');
                 },
                 icon: const Icon(Icons.check)),
           ],
@@ -67,6 +91,7 @@ class _AddItemPageState extends State<AddItemPage> {
         slivers: <Widget>[
           SliverToBoxAdapter(
             child: TextField(
+              enabled: widget.itemId == '' ? true:false,
               maxLines: 1,
               decoration: InputDecoration(
                 icon: Icon(Icons.perm_identity),
@@ -123,9 +148,9 @@ class _AddItemPageState extends State<AddItemPage> {
             delegate: SliverChildBuilderDelegate(
               (BuildContext context, int index) {
                 return generateEntryWidget(
-                    nameControllers[index], contentControllers[index]);
+                    labelControllers[index], contentControllers[index]);
               },
-              childCount: nameControllers.length,
+              childCount: labelControllers.length,
             ),
           ),
         ],
@@ -138,7 +163,7 @@ class _AddItemPageState extends State<AddItemPage> {
     );
   }
 
-  Column generateEntryWidget(TextEditingController nameController,
+  Column generateEntryWidget(TextEditingController labelController,
       TextEditingController contentController) {
     return Column(
       children: [
@@ -151,7 +176,7 @@ class _AddItemPageState extends State<AddItemPage> {
               border: UnderlineInputBorder(),
               hintText: '条目名称',
             ),
-            controller: nameController,
+            controller: labelController,
           ),
         ),
         Padding(
@@ -170,8 +195,8 @@ class _AddItemPageState extends State<AddItemPage> {
         IconButton(
           icon: Icon(Icons.delete),
           onPressed: () {
-            nameController.dispose();
-            nameControllers.remove(nameController);
+            labelController.dispose();
+            labelControllers.remove(labelController);
             contentController.dispose();
             contentControllers.remove(contentController);
             setState(() {});
@@ -182,9 +207,9 @@ class _AddItemPageState extends State<AddItemPage> {
   }
 
   void addEntry() {
-    final nameController = TextEditingController();
+    final labelController = TextEditingController();
     final contentController = TextEditingController();
-    nameControllers.add(nameController);
+    labelControllers.add(labelController);
     contentControllers.add(contentController);
     setState(() {});
   }
@@ -249,7 +274,7 @@ class _AddItemPageState extends State<AddItemPage> {
       children: [
         Icon(Icons.file_present),
         SizedBox(
-          child: Text(filePath),
+          child: Text(path.basename(filePath)),
           width: MediaQuery.of(context).size.width - 64,
         ),
         IconButton(

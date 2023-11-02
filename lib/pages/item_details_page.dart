@@ -1,26 +1,45 @@
 import 'package:flutter/material.dart';
+import 'package:stock_managing/pages/edit_item_page.dart';
 import 'dart:io';
+
+import 'package:stock_managing/tools/data_processing.dart';
+import 'package:path/path.dart' as path;
 
 class ItemDetailsPage extends StatefulWidget {
   const ItemDetailsPage(
       {super.key,
-      required this.itemId,
-      required this.picList,
-      required this.fileList,
-      required this.json,
-      required this.keyList});
+      required this.itemId});
 
   final String itemId;
-  final List<FileSystemEntity> picList;
-  final List<FileSystemEntity> fileList;
-  final Map<String, dynamic> json;
-  final List<String> keyList;
 
   @override
   State<ItemDetailsPage> createState() => _ItemDetailsPageState();
 }
 
 class _ItemDetailsPageState extends State<ItemDetailsPage> {
+  Map<String,dynamic> json = {};
+  List<String> picPaths = [];
+  List<String> filePaths = [];
+  List<String> keyList = [];
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.itemId != '') _loadData(widget.itemId);
+  }
+
+  void _loadData (String itemId) async {
+    var itemInfo = await loadItemInfo(widget.itemId);
+    json = itemInfo[0];
+    picPaths = itemInfo[1];
+    print(picPaths);
+    filePaths = itemInfo[2];
+    for (var key in json.keys) {
+      keyList.add(key);
+    }
+    setState(() {});
+  }
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -28,7 +47,9 @@ class _ItemDetailsPageState extends State<ItemDetailsPage> {
           backgroundColor: Theme.of(context).colorScheme.inversePrimary,
           title: Text('物品详情'),
           actions: [
-            IconButton(onPressed: () {}, icon: const Icon(Icons.edit)),
+            IconButton(onPressed: () {
+              Navigator.of(context).push(MaterialPageRoute(builder: (context) => EditItemPage(itemId: widget.itemId,)));
+            }, icon: const Icon(Icons.edit)),
           ],
           leading: IconButton(
             icon: Icon(Icons.arrow_back),
@@ -50,16 +71,15 @@ class _ItemDetailsPageState extends State<ItemDetailsPage> {
             ),
           ),
           SliverToBoxAdapter(
-            child: SizedBox(
+            child: Container(
               height: 200,
               child: ListView.builder(
                   scrollDirection: Axis.horizontal,
-                  itemCount: widget.picList.length,
+                  itemCount: picPaths.length,
                   itemBuilder: (context, index) {
                     return Padding(
                       padding: const EdgeInsets.all(8.0),
-                      child: generatePictureWidget(widget.picList[index]),
-                      // child: Container(),
+                      child: generatePictureWidget(picPaths[index]),
                     );
                   }),
             ),
@@ -67,9 +87,9 @@ class _ItemDetailsPageState extends State<ItemDetailsPage> {
           SliverList(
             delegate: SliverChildBuilderDelegate(
               (BuildContext context, int index) {
-                return generateFilesWidget(widget.fileList[index]);
+                return generateFilesWidget(filePaths[index]);
               },
-              childCount: widget.fileList.length,
+              childCount: filePaths.length,
             ),
           ),
           SliverList(
@@ -77,7 +97,7 @@ class _ItemDetailsPageState extends State<ItemDetailsPage> {
               (BuildContext context, int index) {
                 return generateEntryWidget(index);
               },
-              childCount: widget.keyList.length,
+              childCount: keyList.length,
             ),
           ),
         ],
@@ -101,7 +121,7 @@ class _ItemDetailsPageState extends State<ItemDetailsPage> {
             decoration: InputDecoration(
                 icon: Icon(Icons.bookmark),
                 border: UnderlineInputBorder(),
-                labelText: widget.keyList[index]),
+                labelText: keyList[index]),
           ),
         ),
         Padding(
@@ -113,7 +133,7 @@ class _ItemDetailsPageState extends State<ItemDetailsPage> {
             decoration: InputDecoration(
               icon: Icon(Icons.assignment_outlined),
               border: OutlineInputBorder(),
-              labelText: widget.json[widget.keyList[index]],
+              labelText: json[keyList[index]],
             ),
           ),
         ),
@@ -121,28 +141,26 @@ class _ItemDetailsPageState extends State<ItemDetailsPage> {
     );
   }
 
-  Container generatePictureWidget(FileSystemEntity pic) {
-    print('generating pics');
-    return Container(
-      child: Image.file(
-        File(pic.path),
+  Image generatePictureWidget(String pic) {
+    print('generating pic: ${pic}');
+    return Image.file(
+        File(pic),
         height: 144,
         errorBuilder:
             (BuildContext context, Object exception, StackTrace? stackTrace) {
           print('error occurred');
           return Image(
-              image: AssetImage('assets/images/image_loading_failed.png'));
+            image: AssetImage('assets/images/image_loading_failed.png'));
         },
-      ),
-    );
+      );
   }
 
-  Row generateFilesWidget(FileSystemEntity file) {
+  Row generateFilesWidget(String file) {
     return Row(
       children: [
         Icon(Icons.file_present),
         SizedBox(
-          child: Text(file.path),
+          child: Text(path.basename(file)),
           width: MediaQuery.of(context).size.width - 64,
         ),
       ],

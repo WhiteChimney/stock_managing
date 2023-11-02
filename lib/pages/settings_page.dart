@@ -4,9 +4,7 @@ import 'package:stock_managing/tools/my_ssh.dart';
 import 'package:stock_managing/tools/data_processing.dart';
 
 class SettingsPage extends StatefulWidget {
-  const SettingsPage({super.key, required this.pref});
-
-  final SharedPreferences pref;
+  const SettingsPage({super.key});
 
   @override
   State<SettingsPage> createState() => _SettingsPageState();
@@ -19,6 +17,13 @@ class _SettingsPageState extends State<SettingsPage> {
   final textPasswordController = TextEditingController();
 
   bool infoChanged = false;
+  late SharedPreferences pref;
+  SshServerInfo serverInfo = SshServerInfo(
+    '127.0.0.1',
+    22,
+    'guest',
+    'password',
+  );
 
   @override
   void dispose() {
@@ -31,8 +36,19 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  void _loadData() async {
+    pref = await loadUserPreferences();
+    serverInfo = loadSshServerInfoFromPref(pref);
+    setState(() {});
+  }
+
+  @override
   Widget build(BuildContext context) {
-    SshServerInfo serverInfo = loadSshServerInfoFromPref(widget.pref);
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
@@ -139,7 +155,7 @@ class _SettingsPageState extends State<SettingsPage> {
     bool infoChanged = false;
     if (textIpController.text != '') {
       serverInfo.ip = textIpController.text;
-      await widget.pref.setString('ip', serverInfo.ip);
+      await pref.setString('ip', serverInfo.ip);
       infoChanged = true;
     } else {
       setStringToTextController(textIpController, serverInfo.ip);
@@ -147,21 +163,21 @@ class _SettingsPageState extends State<SettingsPage> {
     int? port = int.tryParse(textPortController.text);
     if (port != null) {
       serverInfo.port = port;
-      await widget.pref.setInt('port', serverInfo.port);
+      await pref.setInt('port', serverInfo.port);
       infoChanged = true;
     } else {
       setStringToTextController(textPortController, serverInfo.port.toString());
     }
     if (textUsernameController.text != '') {
       serverInfo.username = textUsernameController.text;
-      await widget.pref.setString('username', serverInfo.username);
+      await pref.setString('username', serverInfo.username);
       infoChanged = true;
     } else {
       setStringToTextController(textUsernameController, serverInfo.username);
     }
     if (textPasswordController.text != '') {
       serverInfo.password = textPasswordController.text;
-      await widget.pref.setString('password', serverInfo.password);
+      await pref.setString('password', serverInfo.password);
       infoChanged = true;
     } else {
       setStringToTextController(textPasswordController, serverInfo.password);

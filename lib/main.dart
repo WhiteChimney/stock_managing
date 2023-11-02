@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:stock_managing/pages/home_page.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:stock_managing/tools/initialization.dart';
 
-void main() async {
-  SharedPreferences pref = await initUserProfile();
-  runApp(MyApp(pref: pref));
+void initApp() {
+  WidgetsFlutterBinding.ensureInitialized();
+}
+
+void main() {
+  initApp();
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key, required this.pref});
-
-  final SharedPreferences pref;
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -21,10 +21,12 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepOrange),
         useMaterial3: true,
       ),
-      home: MyHomePage(
-        title: '主页',
-        pref: pref,
+      home: const MyHomePage(
+        title: '主页'
       ),
+      routes: {
+        '/homePage':(context) => const MyHomePage(title: '主页'),
+      },
     );
   }
 }
