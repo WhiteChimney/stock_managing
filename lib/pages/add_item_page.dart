@@ -6,9 +6,12 @@ import 'dart:convert';
 import 'package:path_provider/path_provider.dart';
 import 'package:stock_managing/tools/my_cameras.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:stock_managing/tools/data_processing.dart';
 // import 'package:json_annotation/json_annotation.dart;
 
 class AddItemPage extends StatefulWidget {
+  const AddItemPage({super.key, required this.itemId});
+  final String itemId;
   @override
   State<AddItemPage> createState() => _AddItemPageState();
 }
@@ -34,15 +37,22 @@ class _AddItemPageState extends State<AddItemPage> {
   }
 
   @override
+  void initState() async {
+    super.initState();
+    print(widget.itemId);
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
           backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-          title: Text('添加物品'),
+          title: Text(widget.itemId == '' ? '添加物品' : '修改物品'),
           actions: [
             IconButton(
                 onPressed: () {
-                  saveItemInfo();
+                  saveItemInfo(idController, nameControllers,
+                      contentControllers, picPaths, filePaths);
                   Navigator.pop(context);
                 },
                 icon: const Icon(Icons.check)),
@@ -251,51 +261,5 @@ class _AddItemPageState extends State<AddItemPage> {
         ),
       ],
     );
-  }
-
-  void saveItemInfo() async {
-    if (idController.text == '') return;
-    var cacheDir = await getApplicationCacheDirectory();
-    var userDir = path.join(cacheDir.path, 'noland');
-    var stockingDir = path.join(userDir, 'stockings');
-    var itemsDir = path.join(stockingDir, 'items');
-    var jsonDir = path.join(itemsDir, idController.text);
-    var imgDir = path.join(jsonDir, 'images');
-    var fileDir = path.join(jsonDir, 'files');
-    await Directory(imgDir).create(recursive: true);
-    await Directory(fileDir).create(recursive: true);
-
-    print(imgDir);
-
-    String itemId = idController.text;
-
-    for (int index = 0; index < picPaths.length; index++) {
-      var picRead = File(picPaths[index]);
-      var picExt = path.extension(picRead.path);
-      await picRead.copy(path.join(imgDir, '${itemId}_${index}${picExt}'));
-    }
-
-    for (int index = 0; index < filePaths.length; index++) {
-      var fileRead = File(filePaths[index]);
-      var fileBase = path.basename(fileRead.path);
-      await fileRead.copy(path.join(fileDir, fileBase));
-    }
-
-    Map<String, dynamic> json = {};
-    for (int index = 0; index < nameControllers.length; index++) {
-      json[nameControllers[index].text] = contentControllers[index].text;
-    }
-    var fWrite = File(path.join(jsonDir, '${itemId}.json'));
-    await fWrite.writeAsString(jsonEncode(json));
-
-    var fMainJson = File(path.join(stockingDir, 'items.json'));
-    var mainJson = {};
-    if (!(await fMainJson.exists())) {
-      await fMainJson.create();
-    } else {
-      mainJson = jsonDecode(await fMainJson.readAsString());
-    }
-    mainJson[itemId] = 'aaa';
-    await fMainJson.writeAsString(jsonEncode(mainJson));
   }
 }

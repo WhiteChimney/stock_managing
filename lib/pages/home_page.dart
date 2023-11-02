@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:stock_managing/tools/data_processing.dart';
 import 'package:stock_managing/tools/my_ssh.dart';
 import 'add_item_page.dart';
 import 'settings_page.dart';
@@ -100,7 +101,7 @@ class _MyHomePageState extends State<MyHomePage> {
       subtitle: Text(itemsInfo[itemsId[index]]),
       trailing: Icon(Icons.keyboard_arrow_right_outlined),
       onTap: () async {
-        List itemInfo = await generateItemInfo(index);
+        List itemInfo = await generateItemInfo(itemsId[index]);
         if (!context.mounted) return;
         Navigator.of(context).push(MaterialPageRoute(
             builder: (context) => ItemDetailsPage(
@@ -127,42 +128,5 @@ class _MyHomePageState extends State<MyHomePage> {
     }
     print(itemsInfo);
     setState(() {});
-  }
-
-  Future<List> generateItemInfo(int index) async {
-    var cacheDir = await getApplicationCacheDirectory();
-    var itemDir = path.join(
-        cacheDir.path, 'noland', 'stockings', 'items', itemsId[index]);
-    var picDir = path.join(itemDir, 'images');
-    var picList = Directory(picDir).listSync();
-    List<FileSystemEntity> picListFinal = [];
-
-    for (var pic in picList) {
-      var mimetype = lookupMimeType(pic.path);
-      print(mimetype);
-      if (mimetype != null && mimetype.startsWith('image/')) {
-        picListFinal.add(pic);
-      }
-    }
-
-    var fileDir = path.join(itemDir, 'files');
-    var fileList = Directory(fileDir).listSync();
-    List<FileSystemEntity> fileListFinal = [];
-    for (var file in fileList) {
-      if (file is File) {
-        fileListFinal.add(file);
-      }
-    }
-
-    String itemJson = path.join(itemDir, '${itemsId[index]}.json');
-    var fJson = File(itemJson);
-    Map<String, dynamic> json = jsonDecode(await fJson.readAsString());
-    print(json);
-    List<String> keyList = [];
-    for (var key in json.keys) {
-      keyList.add(key);
-    }
-
-    return [picListFinal, fileListFinal, json, keyList];
   }
 }
