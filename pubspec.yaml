@@ -41,6 +41,7 @@ dependencies:
   shared_preferences: ^2.2.2
   file_picker: ^6.0.0
   mime: ^1.0.4
+  archive: ^3.4.6
 
 dev_dependencies:
   flutter_test:

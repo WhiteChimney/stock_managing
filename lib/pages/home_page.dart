@@ -48,7 +48,9 @@ class _MyHomePageState extends State<MyHomePage> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
         actions: [
-          IconButton(onPressed: () {}, icon: const Icon(Icons.search)),
+          IconButton(onPressed: () {
+            _loadItemsInfo();
+            }, icon: const Icon(Icons.refresh)),
         ],
       ),
       drawer: Drawer(
@@ -68,6 +70,36 @@ class _MyHomePageState extends State<MyHomePage> {
                 Navigator.of(context).push(
                     MaterialPageRoute(builder: (context) => SettingsPage()));
               },
+            ),
+            ListTile(
+              title: Text('搜索'),
+              onTap: () => showDialog(
+                context: context,
+                builder: (context) {
+                  return AlertDialog(
+                    title: Text('请输入关键词进行搜索'),
+                    content: Text('敬请期待'),
+                    actions: <Widget>[
+                      TextButton(
+                          child: Text(
+                            '取消',
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                          onPressed: () {
+                            Navigator.pop(context, "取消");
+                          }),
+                      TextButton(
+                        child: Text(
+                          '确定',
+                          style: TextStyle(color: Colors.blue),
+                        ),
+                        onPressed: () {
+                          Navigator.pop(context, "确定");
+                        },
+                      ),
+                    ],
+                  );
+                }),
             ),
             ListTile(
               title: Text('关于'),
@@ -129,9 +161,15 @@ class _MyHomePageState extends State<MyHomePage> {
     serverInfo = loadSshServerInfoFromPref(pref);
 
     var cacheDir = await getApplicationCacheDirectory();
-    var fJson = File(path.join(
-        cacheDir.path, serverInfo.username, 'stockings', 'items.json'));
-    if (!(await fJson.exists())) return;
+    var jsonDir = path.join(
+        cacheDir.path, serverInfo.username, 'stockings');
+    if (!(await Directory(jsonDir).exists())) Directory(jsonDir).create(recursive: true);
+    var fJson = File(path.join(jsonDir, 'items.json'));
+    if (!(await fJson.exists())) {
+      await fJson.create();
+      await fJson.writeAsString('{}');
+      return;
+    }
 
     itemsInfo = jsonDecode(await fJson.readAsString());
     itemsId.clear();

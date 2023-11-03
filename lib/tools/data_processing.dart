@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:dartssh2/dartssh2.dart';
 import 'package:flutter/material.dart';
 import 'package:mime/mime.dart';
 import 'package:path_provider/path_provider.dart';
@@ -33,14 +34,14 @@ void setStringToTextController(var textController, var str) {
   );
 }
 
-void saveItemInfo (
+Future<List> saveItemInfo (
   String itemId,
   List<String> labelList,
   List<String> contentList,
   List<String> picPaths,
   List<String> filePaths) async {
-  if (itemId == '') return;
-  
+  if (itemId == '') return [false, 'Item ID not specified! '];
+
   var cacheDir = await getApplicationCacheDirectory();
   var userDir = path.join(cacheDir.path, 'noland');
   var stockingDir = path.join(userDir, 'stockings');
@@ -94,6 +95,8 @@ void saveItemInfo (
     }
   }
   await fFileJson.writeAsString(jsonEncode(fileJson));
+
+  return (await uploadItemInfoToServer(itemId));
 }
 
 Future<List> loadItemInfo(String itemId) async {
