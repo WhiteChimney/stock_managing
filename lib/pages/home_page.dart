@@ -65,8 +65,8 @@ class _MyHomePageState extends State<MyHomePage> {
             ListTile(
               title: Text('设置'),
               onTap: () {
-                Navigator.of(context).push(MaterialPageRoute(
-                    builder: (context) => SettingsPage()));
+                Navigator.of(context).push(
+                    MaterialPageRoute(builder: (context) => SettingsPage()));
               },
             ),
             ListTile(
@@ -94,7 +94,11 @@ class _MyHomePageState extends State<MyHomePage> {
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.push(
-              context, MaterialPageRoute(builder: (context) => EditItemPage(itemId: '',)));
+              context,
+              MaterialPageRoute(
+                  builder: (context) => EditItemPage(
+                        itemId: '',
+                      )));
         },
         tooltip: '添加物品',
         child: const Icon(Icons.add),
@@ -113,7 +117,9 @@ class _MyHomePageState extends State<MyHomePage> {
         // List itemInfo = await loadItemInfo(itemsId[index]);
         if (!context.mounted) return;
         Navigator.of(context).push(MaterialPageRoute(
-            builder: (context) => ItemDetailsPage(itemId: itemsId[index],)));
+            builder: (context) => ItemDetailsPage(
+                  itemId: itemsId[index],
+                )));
       },
     ));
   }
@@ -123,8 +129,8 @@ class _MyHomePageState extends State<MyHomePage> {
     serverInfo = loadSshServerInfoFromPref(pref);
 
     var cacheDir = await getApplicationCacheDirectory();
-    var fJson =
-        File(path.join(cacheDir.path, serverInfo.username, 'stockings', 'items.json'));
+    var fJson = File(path.join(
+        cacheDir.path, serverInfo.username, 'stockings', 'items.json'));
     if (!(await fJson.exists())) return;
 
     itemsInfo = jsonDecode(await fJson.readAsString());
@@ -132,7 +138,7 @@ class _MyHomePageState extends State<MyHomePage> {
     for (var key in itemsInfo.keys) {
       itemsId.add(key);
     }
-    
+
     setState(() {});
   }
 }

@@ -21,7 +21,7 @@ class _EditItemPageState extends State<EditItemPage> {
   List<TextEditingController> labelControllers = [];
   List<TextEditingController> contentControllers = [];
 
-  Map<String,dynamic> json = {};
+  Map<String, dynamic> json = {};
   List<String> picPaths = [];
   List<String> filePaths = [];
 
@@ -43,7 +43,7 @@ class _EditItemPageState extends State<EditItemPage> {
     if (widget.itemId != '') _loadData(widget.itemId);
   }
 
-  void _loadData (String itemId) async {
+  void _loadData(String itemId) async {
     print(widget.itemId);
     var itemInfo = await loadItemInfo(widget.itemId);
     json = itemInfo[0];
@@ -74,8 +74,8 @@ class _EditItemPageState extends State<EditItemPage> {
                     labelList.add(labelControllers[i].text);
                     contentList.add(contentControllers[i].text);
                   }
-                  saveItemInfo(idController.text, labelList,
-                      contentList, picPaths, filePaths);
+                  saveItemInfo(idController.text, labelList, contentList,
+                      picPaths, filePaths);
                   // Navigator.pop(context);
                   Navigator.pushReplacementNamed(context, '/homePage');
                 },
@@ -87,73 +87,77 @@ class _EditItemPageState extends State<EditItemPage> {
               Navigator.pop(context);
             },
           )),
-      body: CustomScrollView(
-        slivers: <Widget>[
-          SliverToBoxAdapter(
-            child: TextField(
-              enabled: widget.itemId == '' ? true:false,
-              maxLines: 1,
-              decoration: InputDecoration(
-                icon: Icon(Icons.perm_identity),
-                border: UnderlineInputBorder(),
-                hintText: '唯一标识符，例如：AFG_3252_20231001_001',
-                labelText: '物品 ID',
-                errorText: '名称中只能包含字母、数字与下划线',
+      body: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: () => FocusScope.of(context).requestFocus(FocusNode()),
+        child: CustomScrollView(
+          slivers: <Widget>[
+            SliverToBoxAdapter(
+              child: TextField(
+                enabled: widget.itemId == '' ? true : false,
+                maxLines: 1,
+                decoration: InputDecoration(
+                  icon: Icon(Icons.perm_identity),
+                  border: UnderlineInputBorder(),
+                  hintText: '唯一标识符，例如：AFG_3252_20231001_001',
+                  labelText: '物品 ID',
+                  errorText: '名称中只能包含字母、数字与下划线',
+                ),
+                controller: idController,
               ),
-              controller: idController,
             ),
-          ),
-          SliverToBoxAdapter(
-              child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: ElevatedButton(
-                      onPressed: addPictures, child: Text('添加照片')),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: ElevatedButton(
-                      onPressed: addOtherFiles, child: Text('添加附件')),
-                ),
-              ],
+            SliverToBoxAdapter(
+                child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: ElevatedButton(
+                        onPressed: addPictures, child: Text('添加照片')),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: ElevatedButton(
+                        onPressed: addOtherFiles, child: Text('添加附件')),
+                  ),
+                ],
+              ),
+            )),
+            SliverToBoxAdapter(
+              child: SizedBox(
+                height: 200,
+                child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: picPaths.length,
+                    itemBuilder: (context, index) {
+                      return Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: generatePictureWidget(picPaths[index]),
+                      );
+                    }),
+              ),
             ),
-          )),
-          SliverToBoxAdapter(
-            child: SizedBox(
-              height: 200,
-              child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: picPaths.length,
-                  itemBuilder: (context, index) {
-                    return Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: generatePictureWidget(picPaths[index]),
-                    );
-                  }),
+            SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (BuildContext context, int index) {
+                  return generateFilesWidget(filePaths[index]);
+                },
+                childCount: filePaths.length,
+              ),
             ),
-          ),
-          SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (BuildContext context, int index) {
-                return generateFilesWidget(filePaths[index]);
-              },
-              childCount: filePaths.length,
+            SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (BuildContext context, int index) {
+                  return generateEntryWidget(
+                      labelControllers[index], contentControllers[index]);
+                },
+                childCount: labelControllers.length,
+              ),
             ),
-          ),
-          SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (BuildContext context, int index) {
-                return generateEntryWidget(
-                    labelControllers[index], contentControllers[index]);
-              },
-              childCount: labelControllers.length,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: addEntry,

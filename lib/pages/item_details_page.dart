@@ -6,9 +6,7 @@ import 'package:stock_managing/tools/data_processing.dart';
 import 'package:path/path.dart' as path;
 
 class ItemDetailsPage extends StatefulWidget {
-  const ItemDetailsPage(
-      {super.key,
-      required this.itemId});
+  const ItemDetailsPage({super.key, required this.itemId});
 
   final String itemId;
 
@@ -17,7 +15,7 @@ class ItemDetailsPage extends StatefulWidget {
 }
 
 class _ItemDetailsPageState extends State<ItemDetailsPage> {
-  Map<String,dynamic> json = {};
+  Map<String, dynamic> json = {};
   List<String> picPaths = [];
   List<String> filePaths = [];
   List<String> keyList = [];
@@ -28,7 +26,7 @@ class _ItemDetailsPageState extends State<ItemDetailsPage> {
     if (widget.itemId != '') _loadData(widget.itemId);
   }
 
-  void _loadData (String itemId) async {
+  void _loadData(String itemId) async {
     var itemInfo = await loadItemInfo(widget.itemId);
     json = itemInfo[0];
     picPaths = itemInfo[1];
@@ -39,7 +37,7 @@ class _ItemDetailsPageState extends State<ItemDetailsPage> {
     }
     setState(() {});
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -47,9 +45,14 @@ class _ItemDetailsPageState extends State<ItemDetailsPage> {
           backgroundColor: Theme.of(context).colorScheme.inversePrimary,
           title: Text('物品详情'),
           actions: [
-            IconButton(onPressed: () {
-              Navigator.of(context).push(MaterialPageRoute(builder: (context) => EditItemPage(itemId: widget.itemId,)));
-            }, icon: const Icon(Icons.edit)),
+            IconButton(
+                onPressed: () {
+                  Navigator.of(context).push(MaterialPageRoute(
+                      builder: (context) => EditItemPage(
+                            itemId: widget.itemId,
+                          )));
+                },
+                icon: const Icon(Icons.edit)),
           ],
           leading: IconButton(
             icon: Icon(Icons.arrow_back),
@@ -144,15 +147,15 @@ class _ItemDetailsPageState extends State<ItemDetailsPage> {
   Image generatePictureWidget(String pic) {
     print('generating pic: ${pic}');
     return Image.file(
-        File(pic),
-        height: 144,
-        errorBuilder:
-            (BuildContext context, Object exception, StackTrace? stackTrace) {
-          print('error occurred');
-          return Image(
+      File(pic),
+      height: 144,
+      errorBuilder:
+          (BuildContext context, Object exception, StackTrace? stackTrace) {
+        print('error occurred');
+        return Image(
             image: AssetImage('assets/images/image_loading_failed.png'));
-        },
-      );
+      },
+    );
   }
 
   Row generateFilesWidget(String file) {
