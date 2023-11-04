@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:stock_managing/pages/about_page.dart';
 
 import 'package:stock_managing/pages/edit_item_page.dart';
 import 'package:stock_managing/pages/item_details_page.dart';
+import 'package:stock_managing/pages/settings_page.dart';
 import 'package:stock_managing/tools/my_ssh.dart';
 import 'package:stock_managing/tools/server_communication.dart';
 

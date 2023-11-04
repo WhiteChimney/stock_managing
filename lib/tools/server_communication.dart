@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:dartssh2/dartssh2.dart';
 import 'package:mime/mime.dart';
@@ -132,8 +133,8 @@ Future<List> saveItemInfo (
   var stockingDir = path.join(userDir, 'stockings');
   var itemsDir = path.join(stockingDir, 'items');
   var jsonDir = path.join(itemsDir, itemId);
-  var imgDir = path.join(jsonDir, 'images');
-  var fileDir = path.join(jsonDir, 'files');
+  // var imgDir = path.join(jsonDir, 'images');
+  // var fileDir = path.join(jsonDir, 'files');
   var result = await sshConnectServer(serverInfo);
   if (!result[0]) return [result[0],result[1]];
   SSHClient client = result[2];
