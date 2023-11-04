@@ -82,20 +82,13 @@ class TakePictureScreenState extends State<TakePictureScreen> {
             // Attempt to take a picture and get the file `image`
             // where it was saved.
             final image = await _controller.takePicture();
-            print(image.path);
-            print(image.name);
 
-            try {
-              final directory = await getApplicationCacheDirectory();
-              var fWrite = File('${directory.path}/${image.name}');
-              // fWrite.writeAsBytes(await image.readAsBytes());
-              var fRead = File(image.path);
-              var contents = await fRead.readAsBytes();
-              fWrite.writeAsBytes(contents);
-              print('The pic is saved as ${directory.path}/${image.name}');
-            } catch (err) {
-              print(err);
-            }
+            final directory = await getApplicationCacheDirectory();
+            var fWrite = File('${directory.path}/${image.name}');
+            // fWrite.writeAsBytes(await image.readAsBytes());
+            var fRead = File(image.path);
+            var contents = await fRead.readAsBytes();
+            fWrite.writeAsBytes(contents);
 
             if (!mounted) return;
 

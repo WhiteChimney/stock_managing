@@ -46,7 +46,6 @@ class _EditItemPageState extends State<EditItemPage> {
   }
 
   void _loadData(String itemId) async {
-    print(widget.itemId);
     var itemInfo = await loadItemInfo(widget.itemId);
     json = itemInfo[0];
     picPaths = itemInfo[1];
@@ -70,6 +69,13 @@ class _EditItemPageState extends State<EditItemPage> {
           actions: [
             IconButton(
                 onPressed: () async {
+                  const snackBar = SnackBar(
+                    content: Text('文件上传中，请稍候……'),
+                    duration: Duration(seconds: 2),
+                  );
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(snackBar);
+
                   List<String> labelList = [];
                   List<String> contentList = [];
                   for (int i = 0; i < labelControllers.length; i++) {
@@ -86,7 +92,7 @@ class _EditItemPageState extends State<EditItemPage> {
                 icon: const Icon(Icons.check)),
           ],
           leading: IconButton(
-            icon: Icon(Icons.arrow_back),
+            icon: const Icon(Icons.arrow_back),
             onPressed: () async {
               var pref = await loadUserPreferences();
               SshServerInfo serverInfo = loadSshServerInfoFromPref(pref);
@@ -109,7 +115,7 @@ class _EditItemPageState extends State<EditItemPage> {
               child: TextField(
                 enabled: widget.itemId == '' ? true : false,
                 maxLines: 1,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   icon: Icon(Icons.perm_identity),
                   border: UnderlineInputBorder(),
                   hintText: '唯一标识符，例如：AFG_3252_20231001_001',
@@ -128,12 +134,12 @@ class _EditItemPageState extends State<EditItemPage> {
                   Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: ElevatedButton(
-                        onPressed: addPictures, child: Text('添加照片')),
+                        onPressed: addPictures, child: const Text('添加照片')),
                   ),
                   Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: ElevatedButton(
-                        onPressed: addOtherFiles, child: Text('添加附件')),
+                        onPressed: addOtherFiles, child: const Text('添加附件')),
                   ),
                 ],
               ),
@@ -188,7 +194,7 @@ class _EditItemPageState extends State<EditItemPage> {
           padding: const EdgeInsets.all(8.0),
           child: TextField(
             maxLines: 1,
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
               icon: Icon(Icons.bookmark),
               border: UnderlineInputBorder(),
               hintText: '条目名称',
@@ -201,7 +207,7 @@ class _EditItemPageState extends State<EditItemPage> {
           child: TextField(
             minLines: 2,
             maxLines: 5,
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
               icon: Icon(Icons.assignment_outlined),
               border: OutlineInputBorder(),
               hintText: '条目内容',
@@ -210,7 +216,7 @@ class _EditItemPageState extends State<EditItemPage> {
           ),
         ),
         IconButton(
-          icon: Icon(Icons.delete),
+          icon: const Icon(Icons.delete),
           onPressed: () {
             labelController.dispose();
             labelControllers.remove(labelController);
@@ -238,7 +244,6 @@ class _EditItemPageState extends State<EditItemPage> {
       final result = await Navigator.push(context,
           MaterialPageRoute(builder: (_) => TakePictureScreen(camera: camera)));
       String picPath = result.path;
-      print(picPath);
       picPaths.add(picPath);
       setState(() {});
     } else {
@@ -246,7 +251,6 @@ class _EditItemPageState extends State<EditItemPage> {
 
       if (result != null) {
         picPaths.add(result.files.single.path.toString());
-        print(picPaths);
         setState(() {});
       }
     }
@@ -260,8 +264,7 @@ class _EditItemPageState extends State<EditItemPage> {
           height: 144,
           errorBuilder:
               (BuildContext context, Object exception, StackTrace? stackTrace) {
-            print('error occurred');
-            return Image(
+            return const Image(
                 image: AssetImage('assets/images/image_loading_failed.png'));
           },
         ),
@@ -270,7 +273,7 @@ class _EditItemPageState extends State<EditItemPage> {
             picPaths.remove(picPath);
             setState(() {});
           },
-          icon: Icon(Icons.delete),
+          icon: const Icon(Icons.delete),
         ),
       ],
     );
@@ -281,7 +284,6 @@ class _EditItemPageState extends State<EditItemPage> {
 
     if (result != null) {
       filePaths.add(result.files.single.path.toString());
-      print(filePaths);
       setState(() {});
     }
   }
@@ -289,17 +291,17 @@ class _EditItemPageState extends State<EditItemPage> {
   Row generateFilesWidget(String filePath) {
     return Row(
       children: [
-        Icon(Icons.file_present),
+        const Icon(Icons.file_present),
         SizedBox(
-          child: Text(path.basename(filePath)),
           width: MediaQuery.of(context).size.width - 64,
+          child: Text(path.basename(filePath)),
         ),
         IconButton(
           onPressed: () {
             filePaths.remove(filePath);
             setState(() {});
           },
-          icon: Icon(Icons.delete),
+          icon: const Icon(Icons.delete),
         ),
       ],
     );

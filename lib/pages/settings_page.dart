@@ -71,57 +71,57 @@ class _SettingsPageState extends State<SettingsPage> {
               Expanded(
                 child: ListView(
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
+                    const Padding(
+                      padding: EdgeInsets.all(8.0),
                       child: Text('服务器 IP 地址或域名'),
                     ),
                     Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: TextField(
                         decoration: InputDecoration(
-                          border: OutlineInputBorder(),
+                          border: const OutlineInputBorder(),
                           hintText: serverInfo.ip,
                         ),
                         controller: textIpController,
                       ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
+                    const Padding(
+                      padding: EdgeInsets.all(8.0),
                       child: Text('端口号（默认为 22）'),
                     ),
                     Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: TextField(
                         decoration: InputDecoration(
-                          border: OutlineInputBorder(),
+                          border: const OutlineInputBorder(),
                           hintText: serverInfo.port.toString(),
                         ),
                         controller: textPortController,
                       ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
+                    const Padding(
+                      padding: EdgeInsets.all(8.0),
                       child: Text('用户名'),
                     ),
                     Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: TextField(
                         decoration: InputDecoration(
-                          border: OutlineInputBorder(),
+                          border: const OutlineInputBorder(),
                           hintText: serverInfo.username,
                         ),
                         controller: textUsernameController,
                       ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
+                    const Padding(
+                      padding: EdgeInsets.all(8.0),
                       child: Text('密码'),
                     ),
                     Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: TextField(
                         decoration: InputDecoration(
-                          border: OutlineInputBorder(),
+                          border: const OutlineInputBorder(),
                           hintText: serverInfo.password,
                         ),
                         controller: textPasswordController,
@@ -137,7 +137,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       infoChanged =
                           await updateServerInfoInTextfield(serverInfo);
                     },
-                    child: Text('保存')),
+                    child: const Text('保存')),
               ),
               Padding(
                 padding: const EdgeInsets.only(bottom: 100.0),
@@ -148,7 +148,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       if (!context.mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(snackBar);
                     },
-                    child: Text('测试服务器连接情况')),
+                    child: const Text('测试服务器连接情况')),
               ),
             ],
           ),

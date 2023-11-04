@@ -33,19 +33,19 @@ Future<List> makeSureServerIsReady() async {
     }
   }
   try {
-    await sftp.stat('${remoteStockingsDir}/items');
+    await sftp.stat('$remoteStockingsDir/items');
   } catch (err) {
     if (err.toString() == SFTP_NO_SUCH_FILE_ERROR) {
-      await sftp.mkdir('${remoteStockingsDir}/items');
+      await sftp.mkdir('$remoteStockingsDir/items');
     } else {
       return [false, err.toString()];
     }
   }
   try {
-    await sftp.stat('${remoteStockingsDir}/items.json');
+    await sftp.stat('$remoteStockingsDir/items.json');
   } catch (err) {
     if (err.toString() == SFTP_NO_SUCH_FILE_ERROR) {
-      final file = await sftp.open('${remoteStockingsDir}/items.json',
+      final file = await sftp.open('$remoteStockingsDir/items.json',
           mode: SftpFileOpenMode.write |
               SftpFileOpenMode.create |
               SftpFileOpenMode.truncate);

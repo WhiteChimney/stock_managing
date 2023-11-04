@@ -58,29 +58,29 @@ class _MyHomePageState extends State<MyHomePage> {
             DrawerHeader(
               child: Column(
                 children: [
-                  Text('当前用户'),
+                  const Text('当前用户'),
                   Text(serverInfo.username),
                 ],
               ),
             ),
             ListTile(
-              title: Text('设置'),
+              title: const Text('设置'),
               onTap: () {
-                Navigator.of(context).push(
-                    MaterialPageRoute(builder: (context) => SettingsPage()));
+                Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) => const SettingsPage()));
               },
             ),
             ListTile(
-              title: Text('搜索'),
+              title: const Text('搜索'),
               onTap: () => showDialog(
                   context: context,
                   builder: (context) {
                     return AlertDialog(
-                      title: Text('请输入关键词进行搜索'),
-                      content: Text('敬请期待'),
+                      title: const Text('请输入关键词进行搜索'),
+                      content: const Text('敬请期待'),
                       actions: <Widget>[
                         TextButton(
-                            child: Text(
+                            child: const Text(
                               '取消',
                               style: TextStyle(color: Colors.grey),
                             ),
@@ -88,7 +88,7 @@ class _MyHomePageState extends State<MyHomePage> {
                               Navigator.pop(context, "取消");
                             }),
                         TextButton(
-                          child: Text(
+                          child: const Text(
                             '确定',
                             style: TextStyle(color: Colors.blue),
                           ),
@@ -101,10 +101,10 @@ class _MyHomePageState extends State<MyHomePage> {
                   }),
             ),
             ListTile(
-              title: Text('关于'),
+              title: const Text('关于'),
               onTap: () {
-                Navigator.of(context)
-                    .push(MaterialPageRoute(builder: (context) => AboutPage()));
+                Navigator.of(context).push(
+                    MaterialPageRoute(builder: (context) => const AboutPage()));
               },
             ),
           ],
@@ -127,7 +127,7 @@ class _MyHomePageState extends State<MyHomePage> {
           Navigator.push(
               context,
               MaterialPageRoute(
-                  builder: (context) => EditItemPage(
+                  builder: (context) => const EditItemPage(
                         itemId: '',
                       )));
         },
@@ -137,13 +137,12 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  Container generateItemView(int index) {
-    return Container(
-        child: ListTile(
-      leading: Icon(Icons.file_download_done),
+  ListTile generateItemView(int index) {
+    return ListTile(
+      leading: const Icon(Icons.file_download_done),
       title: Text(itemsId[index]),
       subtitle: Text(itemsInfo[itemsId[index]]),
-      trailing: Icon(Icons.keyboard_arrow_right_outlined),
+      trailing: const Icon(Icons.keyboard_arrow_right_outlined),
       onTap: () async {
         // List itemInfo = await loadItemInfo(itemsId[index]);
         if (!context.mounted) return;
@@ -152,11 +151,10 @@ class _MyHomePageState extends State<MyHomePage> {
                   itemId: itemsId[index],
                 )));
       },
-    ));
+    );
   }
 
   void _downloadItemsInfo() async {
-    print('downloading stuff');
     var result = await downloadJsonFromServer();
     var mainJsonPath = result[1];
     itemsInfo = jsonDecode(File(mainJsonPath).readAsStringSync());

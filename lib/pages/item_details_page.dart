@@ -25,13 +25,22 @@ class _ItemDetailsPageState extends State<ItemDetailsPage> {
   void initState() {
     super.initState();
     if (widget.itemId != '') _loadData(widget.itemId);
+    var widgetsBinding = WidgetsBinding.instance;
+    widgetsBinding.addPostFrameCallback((timeStamp) {
+      const snackBar = SnackBar(
+        content: Text('数据加载中，请稍候……'),
+        duration: Duration(seconds: 1),
+      );
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(snackBar);
+    });
   }
 
   void _loadData(String itemId) async {
-    var itemInfo = await loadItemInfo(widget.itemId);
+    var result = await Future.wait([loadItemInfo(widget.itemId)]);
+    var itemInfo = result[0];
     json = itemInfo[0];
     picPaths = itemInfo[1];
-    print(picPaths);
     filePaths = itemInfo[2];
     for (var key in json.keys) {
       keyList.add(key);
@@ -44,7 +53,7 @@ class _ItemDetailsPageState extends State<ItemDetailsPage> {
     return Scaffold(
       appBar: AppBar(
           backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-          title: Text('物品详情'),
+          title: const Text('物品详情'),
           actions: [
             IconButton(
                 onPressed: () {
@@ -56,7 +65,7 @@ class _ItemDetailsPageState extends State<ItemDetailsPage> {
                 icon: const Icon(Icons.edit)),
           ],
           leading: IconButton(
-            icon: Icon(Icons.arrow_back),
+            icon: const Icon(Icons.arrow_back),
             onPressed: () {
               Navigator.pop(context);
             },
@@ -68,14 +77,14 @@ class _ItemDetailsPageState extends State<ItemDetailsPage> {
               enabled: false,
               maxLines: 1,
               decoration: InputDecoration(
-                icon: Icon(Icons.perm_identity),
-                border: UnderlineInputBorder(),
+                icon: const Icon(Icons.perm_identity),
+                border: const UnderlineInputBorder(),
                 labelText: widget.itemId,
               ),
             ),
           ),
           SliverToBoxAdapter(
-            child: Container(
+            child: SizedBox(
               height: 200,
               child: ListView.builder(
                   scrollDirection: Axis.horizontal,
@@ -123,8 +132,8 @@ class _ItemDetailsPageState extends State<ItemDetailsPage> {
             enabled: false,
             maxLines: 1,
             decoration: InputDecoration(
-                icon: Icon(Icons.bookmark),
-                border: UnderlineInputBorder(),
+                icon: const Icon(Icons.bookmark),
+                border: const UnderlineInputBorder(),
                 labelText: keyList[index]),
           ),
         ),
@@ -135,8 +144,8 @@ class _ItemDetailsPageState extends State<ItemDetailsPage> {
             minLines: 2,
             maxLines: 5,
             decoration: InputDecoration(
-              icon: Icon(Icons.assignment_outlined),
-              border: OutlineInputBorder(),
+              icon: const Icon(Icons.assignment_outlined),
+              border: const OutlineInputBorder(),
               labelText: json[keyList[index]],
             ),
           ),
@@ -146,14 +155,12 @@ class _ItemDetailsPageState extends State<ItemDetailsPage> {
   }
 
   Image generatePictureWidget(String pic) {
-    print('generating pic: ${pic}');
     return Image.file(
       File(pic),
       height: 144,
       errorBuilder:
           (BuildContext context, Object exception, StackTrace? stackTrace) {
-        print('error occurred');
-        return Image(
+        return const Image(
             image: AssetImage('assets/images/image_loading_failed.png'));
       },
     );
@@ -162,10 +169,10 @@ class _ItemDetailsPageState extends State<ItemDetailsPage> {
   Row generateFilesWidget(String file) {
     return Row(
       children: [
-        Icon(Icons.file_present),
+        const Icon(Icons.file_present),
         SizedBox(
-          child: Text(path.basename(file)),
           width: MediaQuery.of(context).size.width - 64,
+          child: Text(path.basename(file)),
         ),
       ],
     );

@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:dartssh2/dartssh2.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+// ignore: constant_identifier_names
 const String SFTP_NO_SUCH_FILE_ERROR = 'SftpStatusError: No such file(code 2)';
 
 class SshServerInfo {
@@ -12,12 +13,12 @@ class SshServerInfo {
   String username = 'guest';
   String password = 'password';
 
-  SshServerInfo(
-      String? m_ip, int? m_port, String? m_username, String? m_password) {
-    if (m_ip != null) ip = m_ip;
-    if (m_port != null) port = m_port;
-    if (m_username != null) username = m_username;
-    if (m_password != null) password = m_password;
+  SshServerInfo(String? inputIp, int? inputPort, String? inputUsername,
+      String? inputPassword) {
+    if (inputIp != null) ip = inputIp;
+    if (inputPort != null) port = inputPort;
+    if (inputUsername != null) username = inputUsername;
+    if (inputPassword != null) password = inputPassword;
   }
 }
 
@@ -141,10 +142,7 @@ Future<List> sftpUploadFile(
           SftpFileOpenMode.truncate |
           SftpFileOpenMode.write,
     );
-    await file
-        .write(File(localFile).openRead().cast())
-        .done
-        .whenComplete(() => print('upload completed'));
+    await file.write(File(localFile).openRead().cast()).done;
     success = true;
   } catch (err) {
     result = err.toString();

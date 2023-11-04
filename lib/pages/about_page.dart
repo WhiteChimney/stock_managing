@@ -15,12 +15,13 @@ class _AboutPageState extends State<AboutPage> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: (){
+          onPressed: () {
             Navigator.pop(context);
-          },),
+          },
+        ),
         title: const Text('关于'),
       ),
-      body: Center(
+      body: const Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
