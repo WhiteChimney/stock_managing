@@ -1,18 +1,10 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:stock_managing/tools/data_processing.dart';
-// import 'package:stock_managing/tools/data_processing.dart';
-import 'package:stock_managing/tools/my_ssh.dart';
-import 'edit_item_page.dart';
-import 'settings_page.dart';
-import 'about_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:io';
-import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as path;
-import 'item_details_page.dart';
-// import 'package:mime/mime.dart';
+
+import 'package:stock_managing/pages/edit_item_page.dart';
+import 'package:stock_managing/pages/item_details_page.dart';
+import 'package:stock_managing/tools/my_ssh.dart';
+import 'package:stock_managing/tools/server_communication.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
@@ -37,19 +29,19 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
-    _loadItemsInfo();
+    _downloadItemsInfo();
   }
 
   @override
   Widget build(BuildContext context) {
-    _loadItemsInfo();
+    // _loadItemsInfo();
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
         actions: [
-          IconButton(onPressed: () {
-            _loadItemsInfo();
+          IconButton(onPressed: () async {
+            _downloadItemsInfo();
             }, icon: const Icon(Icons.refresh)),
         ],
       ),
@@ -156,27 +148,9 @@ class _MyHomePageState extends State<MyHomePage> {
     ));
   }
 
-  void _loadItemsInfo() async {
-    pref = await loadUserPreferences();
-    serverInfo = loadSshServerInfoFromPref(pref);
-
-    var cacheDir = await getApplicationCacheDirectory();
-    var jsonDir = path.join(
-        cacheDir.path, serverInfo.username, 'stockings');
-    if (!(await Directory(jsonDir).exists())) Directory(jsonDir).create(recursive: true);
-    var fJson = File(path.join(jsonDir, 'items.json'));
-    if (!(await fJson.exists())) {
-      await fJson.create();
-      await fJson.writeAsString('{}');
-      return;
-    }
-
-    itemsInfo = jsonDecode(await fJson.readAsString());
-    itemsId.clear();
-    for (var key in itemsInfo.keys) {
-      itemsId.add(key);
-    }
-
-    setState(() {});
+  void _downloadItemsInfo() async {
+    await downloadJsonFromServer().whenComplete(() {
+      setState(() {});
+    });
   }
 }

@@ -1,13 +1,13 @@
+import 'dart:io';
+
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
-import 'dart:io';
-// import 'dart:convert';
-// import 'package:path_provider/path_provider.dart';
-import 'package:stock_managing/tools/my_cameras.dart';
 import 'package:file_picker/file_picker.dart';
+
+import 'package:stock_managing/tools/my_cameras.dart';
 import 'package:stock_managing/tools/data_processing.dart';
-// import 'package:json_annotation/json_annotation.dart;
+import 'package:stock_managing/tools/server_communication.dart';
 
 class EditItemPage extends StatefulWidget {
   const EditItemPage({super.key, required this.itemId});

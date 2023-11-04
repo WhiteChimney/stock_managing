@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:stock_managing/pages/home_page.dart';
 
-void initApp() {
+import 'package:stock_managing/pages/home_page.dart';
+import 'package:stock_managing/tools/prepare_repository.dart';
+
+void initApp() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await makeSureServerIsReady();
+  await makeSureLocalRepositoryIsReady();
 }
 
 void main() {

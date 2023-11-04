@@ -1,13 +1,9 @@
-import 'dart:convert';
 import 'dart:io';
 
-import 'package:dartssh2/dartssh2.dart';
+import 'package:archive/archive_io.dart';
 import 'package:flutter/material.dart';
-import 'package:mime/mime.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as path;
+import 'package:flutter/rendering.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:stock_managing/tools/my_ssh.dart';
 
 Future<SharedPreferences> loadUserPreferences () async {
   SharedPreferences pref = await SharedPreferences.getInstance();
@@ -34,111 +30,19 @@ void setStringToTextController(var textController, var str) {
   );
 }
 
-Future<List> saveItemInfo (
-  String itemId,
-  List<String> labelList,
-  List<String> contentList,
-  List<String> picPaths,
-  List<String> filePaths) async {
-  if (itemId == '') return [false, 'Item ID not specified! '];
 
-  var cacheDir = await getApplicationCacheDirectory();
-  var userDir = path.join(cacheDir.path, 'noland');
-  var stockingDir = path.join(userDir, 'stockings');
-  var itemsDir = path.join(stockingDir, 'items');
-  var jsonDir = path.join(itemsDir, itemId);
-  var imgDir = path.join(jsonDir, 'images');
-  var fileDir = path.join(jsonDir, 'files');
-  await Directory(imgDir).create(recursive: true);
-  await Directory(fileDir).create(recursive: true);
-
-  Map<String, dynamic> json = {};
-  for (int index = 0; index < labelList.length; index++) {
-    json[labelList[index]] = contentList[index];
-  }
-  var fWrite = File(path.join(jsonDir, '${itemId}.json'));
-  await fWrite.writeAsString(jsonEncode(json));
-
-  var fMainJson = File(path.join(stockingDir, 'items.json'));
-  var mainJson = {};
-  if (!(await fMainJson.exists())) {
-    await fMainJson.create();
-  } else {
-    mainJson = jsonDecode(await fMainJson.readAsString());
-  }
-  mainJson[itemId] = 'aaa';
-  await fMainJson.writeAsString(jsonEncode(mainJson));
-
-  for (int index = 0; index < picPaths.length; index++) {
-    var picRead = File(picPaths[index]);
-    var picExt = path.extension(picRead.path);
-    await picRead.copy(path.join(imgDir, '${itemId}_${index}${picExt}'));
-  }
-
-  String itemFileJson = path.join(jsonDir, '${itemId}_files.json');
-  var fFileJson = File(itemFileJson);
-  Map fileJson = {};
-  if (await fFileJson.exists()) {
-    fileJson = jsonDecode(await fFileJson.readAsString());
-  } 
-  int filesCount = fileJson.length;
-  for (int index = 0; index < filePaths.length; index++) {
-    var fileBasename = path.basename(filePaths[index]);
-    if (fileJson.containsValue(fileBasename)) {
-      continue;
-    } else {
-      var fileRead = File(filePaths[index]);
-      var fileBase = path.basename(fileRead.path);
-      await fileRead.copy(path.join(fileDir, fileBase));
-      fileJson[filesCount.toString()] = fileBasename;
-      filesCount++;
-    }
-  }
-  await fFileJson.writeAsString(jsonEncode(fileJson));
-
-  return (await uploadItemInfoToServer(itemId));
+// 以下 zip 函数在 Windows 平台下以 GBK 编码，实现中文名称不乱码
+// 别的平台下解压 Windows 平台下压缩的文件时，记得指定编码
+// 如 Ubuntu 上，unzip -O GBK zipped.zip
+Future<void> zipAsync(String dirToBeZipped, String zippedFile) async {
+  await Future.delayed(const Duration(seconds: 0), () {
+    var encoder = ZipFileEncoder();
+    encoder.zipDirectory(Directory(dirToBeZipped), filename: zippedFile);
+  });
 }
 
-Future<List> loadItemInfo(String itemId) async {
-  Map<String, dynamic> json = {};
-  List<String> picListFinal = [];
-  List<String> fileListFinal = [];
-
-  if (itemId == '') return [json,picListFinal,fileListFinal];
-
-  SharedPreferences pref = await loadUserPreferences();
-  SshServerInfo serverInfo = loadSshServerInfoFromPref(pref);
-  var cacheDir = await getApplicationCacheDirectory();
-  var itemDir =
-      path.join(cacheDir.path, serverInfo.username, 'stockings', 'items', itemId);
-  String itemJson = path.join(itemDir, '${itemId}.json');
-      
-  if (!(await File(itemJson).exists())) {
-    itemId = '';
-    return [json,picListFinal,fileListFinal];
-  }
-  
-  var fJson = File(itemJson);
-  json = jsonDecode(await fJson.readAsString());
-
-  var picDir = path.join(itemDir, 'images');
-  var picList = Directory(picDir).listSync();
-
-  for (var pic in picList) {
-    var mimetype = lookupMimeType(pic.path);
-    if (mimetype != null && mimetype.startsWith('image/')) {
-      picListFinal.add(pic.path);
-    }
-  }
-
-  var fileDir = path.join(itemDir, 'files');
-  String itemFileJson = path.join(itemDir, '${itemId}_files.json');
-  var fFileJson = File(itemFileJson);
-  if (await fFileJson.exists()) {
-    var fileJson = jsonDecode(await fFileJson.readAsString());
-    for (var key in fileJson.keys) {
-      fileListFinal.add(path.join(fileDir, fileJson[key]));
-    }
-  }
-  return [json, picListFinal, fileListFinal];
+Future<void> unzipAsync(String zippedFile, String dirToBeZipped) async {
+  await Future.delayed(const Duration(seconds: 0), () {
+    extractFileToDisk(zippedFile, dirToBeZipped);
+  });
 }

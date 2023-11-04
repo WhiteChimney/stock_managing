@@ -1,9 +1,10 @@
-import 'package:flutter/material.dart';
-import 'package:stock_managing/pages/edit_item_page.dart';
 import 'dart:io';
 
-import 'package:stock_managing/tools/data_processing.dart';
+import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
+
+import 'package:stock_managing/pages/edit_item_page.dart';
+import 'package:stock_managing/tools/server_communication.dart';
 
 class ItemDetailsPage extends StatefulWidget {
   const ItemDetailsPage({super.key, required this.itemId});
