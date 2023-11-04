@@ -4,9 +4,11 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
 import 'package:file_picker/file_picker.dart';
+import 'package:path_provider/path_provider.dart';
 
 import 'package:stock_managing/tools/my_cameras.dart';
 import 'package:stock_managing/tools/data_processing.dart';
+import 'package:stock_managing/tools/my_ssh.dart';
 import 'package:stock_managing/tools/server_communication.dart';
 
 class EditItemPage extends StatefulWidget {
@@ -67,23 +69,34 @@ class _EditItemPageState extends State<EditItemPage> {
           title: Text(widget.itemId == '' ? '添加物品' : '修改物品'),
           actions: [
             IconButton(
-                onPressed: () {
+                onPressed: () async {
                   List<String> labelList = [];
                   List<String> contentList = [];
                   for (int i = 0; i < labelControllers.length; i++) {
                     labelList.add(labelControllers[i].text);
                     contentList.add(contentControllers[i].text);
                   }
-                  saveItemInfo(idController.text, labelList, contentList,
-                      picPaths, filePaths);
-                  // Navigator.pop(context);
+                  await Future.wait([
+                    saveItemInfo(idController.text, labelList, contentList,
+                        picPaths, filePaths)
+                  ]);
+                  if (!context.mounted) return;
                   Navigator.pushReplacementNamed(context, '/homePage');
                 },
                 icon: const Icon(Icons.check)),
           ],
           leading: IconButton(
             icon: Icon(Icons.arrow_back),
-            onPressed: () {
+            onPressed: () async {
+              var pref = await loadUserPreferences();
+              SshServerInfo serverInfo = loadSshServerInfoFromPref(pref);
+              var cacheDir = await getApplicationCacheDirectory();
+              var userDir = path.join(cacheDir.path, serverInfo.username);
+              var stockingDir = path.join(userDir, 'stockings');
+              var itemsDir = path.join(stockingDir, 'items');
+              var jsonDir = path.join(itemsDir, widget.itemId);
+              Directory(jsonDir).deleteSync(recursive: true);
+              if (!context.mounted) return;
               Navigator.pop(context);
             },
           )),

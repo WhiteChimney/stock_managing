@@ -9,7 +9,7 @@ import 'package:path/path.dart' as path;
 import 'package:stock_managing/tools/data_processing.dart';
 import 'package:stock_managing/tools/my_ssh.dart';
 
-Future<List> makeSureServerIsReady () async {
+Future<List> makeSureServerIsReady() async {
   // 加载配置
   var pref = await loadUserPreferences();
   SshServerInfo serverInfo = loadSshServerInfoFromPref(pref);
@@ -45,31 +45,38 @@ Future<List> makeSureServerIsReady () async {
     await sftp.stat('${remoteStockingsDir}/items.json');
   } catch (err) {
     if (err.toString() == SFTP_NO_SUCH_FILE_ERROR) {
-      final file = await sftp.open('${remoteStockingsDir}/items.json', 
-        mode: SftpFileOpenMode.write | SftpFileOpenMode.create | SftpFileOpenMode.truncate);
+      final file = await sftp.open('${remoteStockingsDir}/items.json',
+          mode: SftpFileOpenMode.write |
+              SftpFileOpenMode.create |
+              SftpFileOpenMode.truncate);
       await file.writeBytes(utf8.encode('{}') as Uint8List);
       return result;
     } else {
       return [false, err.toString()];
     }
   }
+
   result = await sshDisconnectServer(client);
   if (!result[0]) return result;
   return [true, 'Repository ready. '];
 }
 
-Future<List> makeSureLocalRepositoryIsReady () async {
+Future<List> makeSureLocalRepositoryIsReady() async {
   // 加载配置
   var pref = await loadUserPreferences();
   SshServerInfo serverInfo = loadSshServerInfoFromPref(pref);
 
   // 看本地仓库是否存在，如果不在，则新建
   var cacheDir = await getApplicationCacheDirectory();
-  var localStockingsDir = path.join(cacheDir.path,serverInfo.username,'stockings','items');
-  if (!(await Directory(localStockingsDir).exists())) {
-    await Directory(localStockingsDir).create(recursive: true);
+  var localStockingsDir =
+      path.join(cacheDir.path, serverInfo.username, 'stockings', 'items');
+  if (Directory(localStockingsDir).existsSync()) {
+    Directory(localStockingsDir).deleteSync(recursive: true);
   }
-  var mainJson = path.join(cacheDir.path,serverInfo.username,'stockings','items.json');
+  Directory(localStockingsDir).create(recursive: true);
+
+  var mainJson =
+      path.join(cacheDir.path, serverInfo.username, 'stockings', 'items.json');
   if (!File(mainJson).existsSync()) {
     File(mainJson).writeAsStringSync('{}');
   }

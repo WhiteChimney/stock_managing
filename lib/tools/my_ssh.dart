@@ -5,6 +5,7 @@ import 'package:dartssh2/dartssh2.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 const String SFTP_NO_SUCH_FILE_ERROR = 'SftpStatusError: No such file(code 2)';
+
 class SshServerInfo {
   String ip = '127.0.0.1';
   int port = 22;
@@ -12,24 +13,21 @@ class SshServerInfo {
   String password = 'password';
 
   SshServerInfo(
-    String? m_ip, 
-    int? m_port, 
-    String? m_username, 
-    String? m_password) {
-      if (m_ip != null) ip = m_ip;
-      if (m_port != null) port = m_port;
-      if (m_username != null) username = m_username;
-      if (m_password != null) password = m_password;
-    }
+      String? m_ip, int? m_port, String? m_username, String? m_password) {
+    if (m_ip != null) ip = m_ip;
+    if (m_port != null) port = m_port;
+    if (m_username != null) username = m_username;
+    if (m_password != null) password = m_password;
+  }
 }
 
-SshServerInfo loadSshServerInfoFromPref (SharedPreferences pref) {
+SshServerInfo loadSshServerInfoFromPref(SharedPreferences pref) {
   return SshServerInfo(
     pref.getString('ip'),
     pref.getInt('port'),
     pref.getString('username'),
     pref.getString('password'),
-    );
+  );
 }
 
 Future<List> sshTryServer(SshServerInfo serverInfo) async {
@@ -72,7 +70,7 @@ Future<List> sshConnectServer(SshServerInfo serverInfo) async {
       // ],
       onPasswordRequest: () => serverInfo.password,
     );
-    
+
     var msg = await client.run('uptime');
     result = utf8.decode(msg);
     success = true;
@@ -113,7 +111,8 @@ Future<List> sshDisconnectServer(SSHClient client) async {
   return [success, result];
 }
 
-Future<List> sftpReceiveFile(SSHClient client, String remoteFile, String localFile) async {
+Future<List> sftpReceiveFile(
+    SSHClient client, String remoteFile, String localFile) async {
   String? result;
   bool success = false;
   try {
@@ -121,7 +120,7 @@ Future<List> sftpReceiveFile(SSHClient client, String remoteFile, String localFi
     final fRemote = await sftp.open(remoteFile);
     final content = await fRemote.readBytes();
     final fLocal = File(localFile);
-    fLocal.writeAsBytes(content);
+    await fLocal.writeAsBytes(content);
     success = true;
   } catch (err) {
     result = err.toString();
@@ -130,16 +129,22 @@ Future<List> sftpReceiveFile(SSHClient client, String remoteFile, String localFi
   return [success, result];
 }
 
-Future<List> sftpUploadFile(SSHClient client, String localFile, String remoteFile) async {
+Future<List> sftpUploadFile(
+    SSHClient client, String localFile, String remoteFile) async {
   String? result;
   bool success = false;
   try {
     final sftp = await client.sftp();
     final file = await sftp.open(
       remoteFile,
-      mode: SftpFileOpenMode.create | SftpFileOpenMode.truncate | SftpFileOpenMode.write,
+      mode: SftpFileOpenMode.create |
+          SftpFileOpenMode.truncate |
+          SftpFileOpenMode.write,
     );
-    await file.write(File(localFile).openRead().cast()).done.whenComplete(() => print('upload completed'));
+    await file
+        .write(File(localFile).openRead().cast())
+        .done
+        .whenComplete(() => print('upload completed'));
     success = true;
   } catch (err) {
     result = err.toString();
@@ -148,7 +153,7 @@ Future<List> sftpUploadFile(SSHClient client, String localFile, String remoteFil
   return [success, result];
 }
 
-Future<List> sftpListFiles (SSHClient client, String remoteDir) async {
+Future<List> sftpListFiles(SSHClient client, String remoteDir) async {
   String? result;
   bool success = false;
   List<String> fileList = [];

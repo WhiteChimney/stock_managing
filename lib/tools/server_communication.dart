@@ -36,7 +36,7 @@ Future<List> downloadJsonFromServer() async {
   await File(localMainJson).writeAsString(jsonEncode(mainJson));
 
   result = await sshDisconnectServer(client);
-  return result;
+  return [result, localMainJson];
 }
 
 Future<List> loadItemInfo(String itemId) async {
@@ -66,17 +66,20 @@ Future<List> loadItemInfo(String itemId) async {
     return [json, picList, fileList];
   }
   SSHClient client = result[2];
-  result = await sftpReceiveFile(
-          client,
-          '/home/${serverInfo.username}/stockings/items/${itemId}.json',
-          itemJson)
-      .whenComplete(() {
-    var fJson = File(itemJson);
-    json = jsonDecode(fJson.readAsStringSync());
-  });
+  result = await Future.wait([
+    sftpReceiveFile(
+        client,
+        '/home/${serverInfo.username}/stockings/items/${itemId}/${itemId}.json',
+        itemJson)
+  ]);
+  result = result[0];
   if (!result[0]) {
     print('json file download failed');
+    print('error info: ${result[1]}');
     return [json, picList, fileList];
+  } else {
+    var fJson = File(itemJson);
+    json = jsonDecode(fJson.readAsStringSync());
   }
 
   // 然后下载 images 文件夹下的所有图片文件
@@ -91,7 +94,7 @@ Future<List> loadItemInfo(String itemId) async {
   print(remotePicList);
 
   for (var remotePic in remotePicList) {
-    var mimetype = lookupMimeType(remotePic.path);
+    var mimetype = lookupMimeType(remotePic);
     if (mimetype != null && mimetype.startsWith('image/')) {
       result = await sftpReceiveFile(
           client,
@@ -150,14 +153,13 @@ Future<List> saveItemInfo(
 
   // 对主物品条目信息文件 stockings/items.json 文件进行修改
   var fMainJson = File(path.join(stockingDir, 'items.json'));
-  var mainJson = {};
-  if (!(await fMainJson.exists())) {
-    await fMainJson.create();
-  } else {
-    mainJson = jsonDecode(await fMainJson.readAsString());
-  }
+  print(fMainJson);
+  var mainJson = jsonDecode(fMainJson.readAsStringSync());
+  print(mainJson);
   mainJson[itemId] = 'To be developed';
-  await Future.wait([fMainJson.writeAsString(jsonEncode(mainJson))]);
+  print(mainJson);
+  fMainJson.writeAsStringSync(jsonEncode(mainJson));
+  print(await fMainJson.readAsString());
   filesToBeUploaded[fMainJson.path] =
       '/home/${serverInfo.username}/stockings/items.json';
 
@@ -213,13 +215,20 @@ Future<List> saveItemInfo(
     }
   }
 
+  // 建立本地文件夹目录结构
+  Directory(jsonDir).createSync(recursive: true);
+  Directory(path.join(jsonDir, 'images')).createSync(recursive: true);
+  Directory(path.join(jsonDir, 'files')).createSync(recursive: true);
+  File(path.join(jsonDir, '${itemId}.json')).writeAsStringSync('{}');
+  File(path.join(jsonDir, '${itemId}_files.json')).writeAsStringSync('{}');
+
   // 然后修改 stockings/items/itemId/itemId.json
   Map<String, dynamic> json = {};
   for (int index = 0; index < labelList.length; index++) {
     json[labelList[index]] = contentList[index];
   }
   var fWrite = File(path.join(jsonDir, '${itemId}.json'));
-  await Future.wait([fWrite.writeAsString(jsonEncode(json))]);
+  fWrite.writeAsStringSync(jsonEncode(json));
   filesToBeUploaded[fWrite.path] =
       '/home/${serverInfo.username}/stockings/items/${itemId}/${itemId}.json';
 
@@ -241,17 +250,20 @@ Future<List> saveItemInfo(
   }
 
   // 最后对比附件信息，删除远程多余文件，上传本地新增文件
-  result = await sftpReceiveFile(
-      client,
-      path.join(jsonDir, '${itemId}_files_remote.json'),
-      '/home/${serverInfo.username}/stockings/items/${itemId}/${itemId}_files.json');
+  result = await Future.wait([
+    sftpReceiveFile(
+        client,
+        '/home/${serverInfo.username}/stockings/items/${itemId}/${itemId}_files.json',
+        path.join(jsonDir, '${itemId}_files_remote.json'))
+  ]);
+  result = result[0];
   if (!result[0]) return result;
 
   String itemFileJson = path.join(jsonDir, '${itemId}_files.json');
   var fFileJson = File(itemFileJson);
   var fFileJsonRemote = File(path.join(jsonDir, '${itemId}_files_remote.json'));
   Map fileJson = {};
-  Map fileJsonRemote = jsonDecode(await fFileJsonRemote.readAsString());
+  Map fileJsonRemote = jsonDecode(fFileJsonRemote.readAsStringSync());
   int filesCount = 0;
   for (var key in fileJsonRemote.keys) {
     var file = fileJsonRemote[key];
@@ -264,6 +276,8 @@ Future<List> saveItemInfo(
       filesCount++;
     }
   }
+  print(fileJsonRemote);
+  print(filePaths);
   for (var file in filePaths) {
     if (!fileJsonRemote.containsValue(file)) {
       // 该文件需要上传至远端
@@ -274,6 +288,9 @@ Future<List> saveItemInfo(
     }
   }
 
+  print('7');
+  print('length: ${filesToBeUploaded.length}');
+  print(filesToBeUploaded);
   // 等待文件信息 json 保存完毕后，上传所有文件
   filesToBeUploaded[fFileJson.path] =
       '/home/${serverInfo.username}/stockings/items/${itemId}/${itemId}_files.json';
@@ -285,7 +302,10 @@ Future<List> saveItemInfo(
     result = await Future.wait(
         [sftpUploadFile(client, key, filesToBeUploaded[key]!)]);
     results.add(result);
+    print('${result}:${key}');
   }
-  await Directory(jsonDir).delete(recursive: true);
+
+  print('8');
+  if (results.isNotEmpty) await Directory(jsonDir).delete(recursive: true);
   return results.isEmpty ? [false, null] : results[results.length - 1];
 }

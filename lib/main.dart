@@ -3,14 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:stock_managing/pages/home_page.dart';
 import 'package:stock_managing/tools/prepare_repository.dart';
 
-void initApp() async {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await makeSureServerIsReady();
-  await makeSureLocalRepositoryIsReady();
-}
-
-void main() {
-  initApp();
+  await Future.wait(
+      [makeSureServerIsReady(), makeSureLocalRepositoryIsReady()]);
   runApp(const MyApp());
 }
 
@@ -25,11 +21,9 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepOrange),
         useMaterial3: true,
       ),
-      home: const MyHomePage(
-        title: '主页'
-      ),
+      home: const MyHomePage(title: '主页'),
       routes: {
-        '/homePage':(context) => const MyHomePage(title: '主页'),
+        '/homePage': (context) => const MyHomePage(title: '主页'),
       },
     );
   }

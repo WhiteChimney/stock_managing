@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:stock_managing/pages/about_page.dart';
@@ -42,9 +45,11 @@ class _MyHomePageState extends State<MyHomePage> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
         actions: [
-          IconButton(onPressed: () async {
-            _downloadItemsInfo();
-            }, icon: const Icon(Icons.refresh)),
+          IconButton(
+              onPressed: () async {
+                _downloadItemsInfo();
+              },
+              icon: const Icon(Icons.refresh)),
         ],
       ),
       drawer: Drawer(
@@ -68,32 +73,32 @@ class _MyHomePageState extends State<MyHomePage> {
             ListTile(
               title: Text('搜索'),
               onTap: () => showDialog(
-                context: context,
-                builder: (context) {
-                  return AlertDialog(
-                    title: Text('请输入关键词进行搜索'),
-                    content: Text('敬请期待'),
-                    actions: <Widget>[
-                      TextButton(
+                  context: context,
+                  builder: (context) {
+                    return AlertDialog(
+                      title: Text('请输入关键词进行搜索'),
+                      content: Text('敬请期待'),
+                      actions: <Widget>[
+                        TextButton(
+                            child: Text(
+                              '取消',
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                            onPressed: () {
+                              Navigator.pop(context, "取消");
+                            }),
+                        TextButton(
                           child: Text(
-                            '取消',
-                            style: TextStyle(color: Colors.grey),
+                            '确定',
+                            style: TextStyle(color: Colors.blue),
                           ),
                           onPressed: () {
-                            Navigator.pop(context, "取消");
-                          }),
-                      TextButton(
-                        child: Text(
-                          '确定',
-                          style: TextStyle(color: Colors.blue),
+                            Navigator.pop(context, "确定");
+                          },
                         ),
-                        onPressed: () {
-                          Navigator.pop(context, "确定");
-                        },
-                      ),
-                    ],
-                  );
-                }),
+                      ],
+                    );
+                  }),
             ),
             ListTile(
               title: Text('关于'),
@@ -151,8 +156,13 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _downloadItemsInfo() async {
-    await downloadJsonFromServer().whenComplete(() {
-      setState(() {});
-    });
+    print('downloading stuff');
+    var result = await downloadJsonFromServer();
+    var mainJsonPath = result[1];
+    itemsInfo = jsonDecode(File(mainJsonPath).readAsStringSync());
+    for (var key in itemsInfo.keys) {
+      itemsId.add(key);
+    }
+    setState(() {});
   }
 }
