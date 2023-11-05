@@ -73,7 +73,7 @@ Future<List> makeSureLocalRepositoryIsReady() async {
   if (Directory(localStockingsDir).existsSync()) {
     Directory(localStockingsDir).deleteSync(recursive: true);
   }
-  Directory(localStockingsDir).create(recursive: true);
+  Directory(localStockingsDir).createSync(recursive: true);
 
   var mainJson =
       path.join(cacheDir.path, serverInfo.username, 'stockings', 'items.json');
