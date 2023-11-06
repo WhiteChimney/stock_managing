@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
 
-import 'package:stock_managing/pages/edit_item_page.dart';
 import 'package:stock_managing/tools/server_communication.dart';
 
 class ItemDetailsPage extends StatefulWidget {
@@ -17,9 +16,11 @@ class ItemDetailsPage extends StatefulWidget {
 
 class _ItemDetailsPageState extends State<ItemDetailsPage> {
   Map<String, dynamic> json = {};
+  String tag = '';
   List<String> picPaths = [];
   List<String> filePaths = [];
   List<String> keyList = [];
+  bool favorited = false;
 
   @override
   void initState() {
@@ -40,8 +41,9 @@ class _ItemDetailsPageState extends State<ItemDetailsPage> {
     var result = await Future.wait([loadItemInfo(widget.itemId)]);
     var itemInfo = result[0];
     json = itemInfo[0];
-    picPaths = itemInfo[1];
-    filePaths = itemInfo[2];
+    tag = itemInfo[1];
+    picPaths = itemInfo[2];
+    filePaths = itemInfo[3];
     for (var key in json.keys) {
       keyList.add(key);
     }
@@ -57,12 +59,12 @@ class _ItemDetailsPageState extends State<ItemDetailsPage> {
           actions: [
             IconButton(
                 onPressed: () {
-                  Navigator.of(context).push(MaterialPageRoute(
-                      builder: (context) => EditItemPage(
-                            itemId: widget.itemId,
-                          )));
+                  setState(() {
+                    favorited = !favorited;
+                  });
                 },
-                icon: const Icon(Icons.edit)),
+                icon:
+                    Icon(favorited ? Icons.favorite : Icons.favorite_outline)),
           ],
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
@@ -80,6 +82,17 @@ class _ItemDetailsPageState extends State<ItemDetailsPage> {
                 icon: const Icon(Icons.perm_identity),
                 border: const UnderlineInputBorder(),
                 labelText: widget.itemId,
+              ),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: TextField(
+              enabled: false,
+              maxLines: 1,
+              decoration: InputDecoration(
+                icon: const Icon(Icons.class_outlined),
+                border: const UnderlineInputBorder(),
+                labelText: tag,
               ),
             ),
           ),
@@ -117,7 +130,7 @@ class _ItemDetailsPageState extends State<ItemDetailsPage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {},
-        tooltip: '点个赞吧',
+        tooltip: '我要借',
         child: const Icon(Icons.thumb_up),
       ),
     );

@@ -9,7 +9,35 @@ import 'package:path/path.dart' as path;
 import 'package:stock_managing/tools/data_processing.dart';
 import 'package:stock_managing/tools/my_ssh.dart';
 
-Future<List> makeSureServerIsReady() async {
+Future<List> clearRemoteRepository() async {
+  // 加载配置
+  var pref = await loadUserPreferences();
+  SshServerInfo serverInfo = loadSshServerInfoFromPref(pref);
+
+  // 连接服务器
+  SSHClient client;
+  var result = await sshConnectServer(serverInfo);
+  if (!result[0]) return [result[0], result[1]];
+  client = result[2];
+
+  // 看仓库是否存在，如果不在，则新建
+  var remoteStockingsDir = '/home/${serverInfo.username}/stockings';
+  try {
+    await Future.wait([client.run('rm -rf $remoteStockingsDir')]);
+  } catch (err) {
+    if (err.toString() == SFTP_NO_SUCH_FILE_ERROR) {
+      return [true, 'Repository cleared. '];
+    } else {
+      return [false, err.toString()];
+    }
+  }
+
+  result = await sshDisconnectServer(client);
+  if (!result[0]) return result;
+  return [true, 'Repository cleared. '];
+}
+
+Future<List> prepareRemoteRepository() async {
   // 加载配置
   var pref = await loadUserPreferences();
   SshServerInfo serverInfo = loadSshServerInfoFromPref(pref);
@@ -61,7 +89,23 @@ Future<List> makeSureServerIsReady() async {
   return [true, 'Repository ready. '];
 }
 
-Future<List> makeSureLocalRepositoryIsReady() async {
+Future<List> clearLocalRepository() async {
+  // 加载配置
+  var pref = await loadUserPreferences();
+  SshServerInfo serverInfo = loadSshServerInfoFromPref(pref);
+
+  // 看本地仓库是否存在，如果不在，则新建
+  var cacheDir = await getApplicationCacheDirectory();
+  var localRepositoryDir =
+      path.join(cacheDir.path, serverInfo.username, 'stockings');
+  if (Directory(localRepositoryDir).existsSync()) {
+    Directory(localRepositoryDir).deleteSync(recursive: true);
+  }
+
+  return [true, 'Repository cleared. '];
+}
+
+Future<List> prepareLocalRepository() async {
   // 加载配置
   var pref = await loadUserPreferences();
   SshServerInfo serverInfo = loadSshServerInfoFromPref(pref);

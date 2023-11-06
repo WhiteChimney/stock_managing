@@ -3,8 +3,8 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:stock_managing/pages/about_page.dart';
 
+import 'package:stock_managing/pages/about_page.dart';
 import 'package:stock_managing/pages/edit_item_page.dart';
 import 'package:stock_managing/pages/item_details_page.dart';
 import 'package:stock_managing/pages/settings_page.dart';
@@ -12,9 +12,11 @@ import 'package:stock_managing/tools/my_ssh.dart';
 import 'package:stock_managing/tools/server_communication.dart';
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+  const MyHomePage(
+      {super.key, required this.title, required this.serverResult});
 
   final String title;
+  final List serverResult;
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
@@ -30,16 +32,52 @@ class _MyHomePageState extends State<MyHomePage> {
     'password',
   );
   late SharedPreferences pref;
+  bool alerted = false;
 
   @override
   void initState() {
     super.initState();
-    _downloadItemsInfo();
+    var widgetsBinding = WidgetsBinding.instance;
+    widgetsBinding.addPostFrameCallback((timeStamp) {
+      if ((!widget.serverResult[0]) && !alerted) {
+        showDialog(
+            context: context,
+            builder: (context) {
+              return AlertDialog(
+                title: const Text('服务器连接失败！'),
+                content: Text(widget.serverResult[1]),
+                actions: <Widget>[
+                  TextButton(
+                      child: const Text(
+                        '取消',
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                      onPressed: () {
+                        Navigator.pop(context, "取消");
+                      }),
+                  TextButton(
+                    child: const Text(
+                      '前往设置',
+                      style: TextStyle(color: Colors.blue),
+                    ),
+                    onPressed: () {
+                      Navigator.pop(context);
+                      Navigator.of(context).push(MaterialPageRoute(
+                          builder: (context) => const SettingsPage()));
+                    },
+                  ),
+                ],
+              );
+            });
+      }
+      alerted = true;
+    });
+
+    // if (alerted) _downloadItemsInfo();
   }
 
   @override
   Widget build(BuildContext context) {
-    // _loadItemsInfo();
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
@@ -101,6 +139,13 @@ class _MyHomePageState extends State<MyHomePage> {
                   }),
             ),
             ListTile(
+              title: const Text('模板设置'),
+              onTap: () {
+                Navigator.of(context).push(
+                    MaterialPageRoute(builder: (context) => const AboutPage()));
+              },
+            ),
+            ListTile(
               title: const Text('关于'),
               onTap: () {
                 Navigator.of(context).push(
@@ -137,20 +182,67 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  ListTile generateItemView(int index) {
-    return ListTile(
-      leading: const Icon(Icons.file_download_done),
-      title: Text(itemsId[index]),
-      subtitle: Text(itemsInfo[itemsId[index]]),
-      trailing: const Icon(Icons.keyboard_arrow_right_outlined),
-      onTap: () async {
-        // List itemInfo = await loadItemInfo(itemsId[index]);
-        if (!context.mounted) return;
-        Navigator.of(context).push(MaterialPageRoute(
-            builder: (context) => ItemDetailsPage(
-                  itemId: itemsId[index],
-                )));
+  Dismissible generateItemView(int index) {
+    return Dismissible(
+      key: Key(itemsId[index]),
+      background: Container(
+        color: Colors.green,
+        child: const Align(
+          alignment: Alignment.centerLeft,
+          child: Padding(
+            padding: EdgeInsets.only(left: 16),
+            child: Icon(Icons.favorite),
+          ),
+        ),
+      ),
+      secondaryBackground: Container(
+        color: Colors.red,
+        child: const Align(
+          alignment: Alignment.centerRight,
+          child: Padding(
+            padding: EdgeInsets.only(right: 16),
+            child: Icon(Icons.delete),
+          ),
+        ),
+      ),
+      confirmDismiss: (direction) async {
+        if (direction == DismissDirection.startToEnd) {
+          Navigator.of(context).push(MaterialPageRoute(
+              builder: (context) => EditItemPage(
+                    itemId: itemsId[index],
+                  )));
+          return false;
+        } else {
+          bool delete = true;
+          final snackbarController = ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${itemsId[index]}已删除'),
+              action:
+                  SnackBarAction(label: '撤销', onPressed: () => delete = false),
+            ),
+          );
+          await snackbarController.closed;
+          return delete;
+        }
       },
+      onDismissed: (_) async {
+        await Future.wait([deleteItem(itemsId[index])]);
+        _downloadItemsInfo();
+      },
+      child: ListTile(
+        leading: const Icon(Icons.file_download_done),
+        title: Text(itemsId[index]),
+        subtitle: Text(itemsInfo[itemsId[index]]),
+        trailing: const Icon(Icons.keyboard_arrow_right_outlined),
+        onTap: () async {
+          // List itemInfo = await loadItemInfo(itemsId[index]);
+          if (!context.mounted) return;
+          Navigator.of(context).push(MaterialPageRoute(
+              builder: (context) => ItemDetailsPage(
+                    itemId: itemsId[index],
+                  )));
+        },
+      ),
     );
   }
 
@@ -158,6 +250,7 @@ class _MyHomePageState extends State<MyHomePage> {
     var result = await downloadJsonFromServer();
     var mainJsonPath = result[1];
     itemsInfo = jsonDecode(File(mainJsonPath).readAsStringSync());
+    itemsId.clear();
     for (var key in itemsInfo.keys) {
       itemsId.add(key);
     }

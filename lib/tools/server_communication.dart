@@ -53,16 +53,22 @@ Future<List> loadItemInfo(String itemId) async {
   await Directory(path.join(itemDir, 'files')).create(recursive: true);
 
   Map<String, dynamic> json = {};
+  String tag = '';
   List<String> picList = []; // 照片返回的是本地完整路径名称列表
   List<String> fileList = []; // 文件返回的是 basename 列表
 
   // 该情况为新建物品，直接返回空白列表
-  if (itemId == '') return [json, picList, fileList];
+  if (itemId == '') return [json, tag, picList, fileList];
+
+  // 获取关键词
+  var mainJson = jsonDecode(
+      await File(path.join(stockingDir, 'items.json')).readAsString());
+  tag = mainJson[itemId];
 
   // 其次为已存在的物品，需要下载 itemId.json
   var result = await sshConnectServer(serverInfo);
   if (!result[0]) {
-    return [json, picList, fileList];
+    return [json, tag, picList, fileList];
   }
   SSHClient client = result[2];
   result = await Future.wait([
@@ -73,7 +79,7 @@ Future<List> loadItemInfo(String itemId) async {
   ]);
   result = result[0];
   if (!result[0]) {
-    return [json, picList, fileList];
+    return [json, tag, picList, fileList];
   } else {
     var fJson = File(itemJson);
     json = jsonDecode(fJson.readAsStringSync());
@@ -84,7 +90,7 @@ Future<List> loadItemInfo(String itemId) async {
   result = await sftpListFiles(
       client, '/home/${serverInfo.username}/stockings/items/$itemId/images');
   if (!result[0]) {
-    return [json, picList, fileList];
+    return [json, tag, picList, fileList];
   }
   var remotePicList = result[2];
 
@@ -96,7 +102,7 @@ Future<List> loadItemInfo(String itemId) async {
           '/home/${serverInfo.username}/stockings/items/$itemId/images/$remotePic',
           path.join(localPicDir, remotePic));
       if (!result[0]) {
-        return [json, picList, fileList];
+        return [json, tag, picList, fileList];
       }
       picList.add(path.join(localPicDir, remotePic));
     }
@@ -115,11 +121,12 @@ Future<List> loadItemInfo(String itemId) async {
     fileList.add(fJson[key]);
   }
 
-  return [json, picList, fileList];
+  return [json, tag, picList, fileList];
 }
 
 Future<List> saveItemInfo(
     String itemId,
+    String tag,
     List<String> labelList,
     List<String> contentList,
     List<String> picPaths, // 输入的路径为用户待上传的文件路径
@@ -148,7 +155,7 @@ Future<List> saveItemInfo(
   // 对主物品条目信息文件 stockings/items.json 文件进行修改
   var fMainJson = File(path.join(stockingDir, 'items.json'));
   var mainJson = jsonDecode(fMainJson.readAsStringSync());
-  mainJson[itemId] = 'To be developed';
+  mainJson[itemId] = tag;
   fMainJson.writeAsStringSync(jsonEncode(mainJson));
   filesToBeUploaded[fMainJson.path] =
       '/home/${serverInfo.username}/stockings/items.json';
@@ -291,4 +298,42 @@ Future<List> saveItemInfo(
 
   if (results.isNotEmpty) await Directory(jsonDir).delete(recursive: true);
   return results.isEmpty ? [false, null] : results[results.length - 1];
+}
+
+Future<List> deleteItem(String itemId) async {
+  if (itemId == '') return [false, 'ID number is null'];
+
+  // 读取配置
+  SharedPreferences pref = await loadUserPreferences();
+  SshServerInfo serverInfo = loadSshServerInfoFromPref(pref);
+  var cacheDir = await getApplicationCacheDirectory();
+  var stockingDir = path.join(cacheDir.path, serverInfo.username, 'stockings');
+  var localJsonFile = path.join(stockingDir, 'items.json');
+  var remoteJsonFile = '/home/${serverInfo.username}/stockings/items.json';
+
+  // 测试连接服务器
+  var result = await sshConnectServer(serverInfo);
+  if (!result[0]) return [false, 'Server connection failed'];
+
+  // 修改 items.json，删除条目
+  Map<String, dynamic> json =
+      jsonDecode(File(localJsonFile).readAsStringSync());
+  json.remove(itemId);
+  File(localJsonFile).writeAsStringSync(jsonEncode(json));
+
+  // 配置同步至服务器
+  SSHClient client = result[2];
+  SftpClient sftp = await client.sftp();
+  final file = await sftp.open(remoteJsonFile,
+      mode: SftpFileOpenMode.write | SftpFileOpenMode.truncate);
+  result = await Future.wait(
+      [file.writeBytes(utf8.encode(jsonEncode(json)) as Uint8List)]);
+
+  // 删除对应详细信息
+  result = await Future.wait([
+    client.run('rm -rf /home/${serverInfo.username}/stockings/items/$itemId')
+  ]);
+  result = result[0];
+
+  return [true, 'Item deleted. '];
 }

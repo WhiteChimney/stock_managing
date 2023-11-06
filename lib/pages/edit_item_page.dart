@@ -20,16 +20,19 @@ class EditItemPage extends StatefulWidget {
 
 class _EditItemPageState extends State<EditItemPage> {
   TextEditingController idController = TextEditingController();
+  TextEditingController tagController = TextEditingController();
   List<TextEditingController> labelControllers = [];
   List<TextEditingController> contentControllers = [];
 
   Map<String, dynamic> json = {};
+  String tag = '';
   List<String> picPaths = [];
   List<String> filePaths = [];
 
   @override
   void dispose() {
     idController.dispose();
+    tagController.dispose();
     for (final controller in labelControllers) {
       controller.dispose();
     }
@@ -48,9 +51,11 @@ class _EditItemPageState extends State<EditItemPage> {
   void _loadData(String itemId) async {
     var itemInfo = await loadItemInfo(widget.itemId);
     json = itemInfo[0];
-    picPaths = itemInfo[1];
-    filePaths = itemInfo[2];
+    tag = itemInfo[1];
+    picPaths = itemInfo[2];
+    filePaths = itemInfo[3];
     setStringToTextController(idController, widget.itemId);
+    setStringToTextController(tagController, tag);
     for (var key in json.keys) {
       var labelController = TextEditingController(text: key);
       var contentController = TextEditingController(text: json[key]);
@@ -82,12 +87,14 @@ class _EditItemPageState extends State<EditItemPage> {
                     labelList.add(labelControllers[i].text);
                     contentList.add(contentControllers[i].text);
                   }
-                  await Future.wait([
-                    saveItemInfo(idController.text, labelList, contentList,
-                        picPaths, filePaths)
+                  var res = await Future.wait([
+                    saveItemInfo(idController.text, tagController.text,
+                        labelList, contentList, picPaths, filePaths)
                   ]);
+                  print(res[0]);
                   if (!context.mounted) return;
-                  Navigator.pushReplacementNamed(context, '/homePage');
+                  Navigator.pop(context);
+                  // Navigator.pushReplacementNamed(context, '/homePage');
                 },
                 icon: const Icon(Icons.check)),
           ],
@@ -123,6 +130,18 @@ class _EditItemPageState extends State<EditItemPage> {
                   errorText: '名称中只能包含字母、数字与下划线',
                 ),
                 controller: idController,
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: TextField(
+                maxLines: 1,
+                decoration: const InputDecoration(
+                  icon: Icon(Icons.class_outlined),
+                  border: UnderlineInputBorder(),
+                  hintText: '标签/关键词，用于搜索时筛选，可不唯一',
+                  labelText: '描述性标签',
+                ),
+                controller: tagController,
               ),
             ),
             SliverToBoxAdapter(
