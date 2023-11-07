@@ -7,7 +7,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:stock_managing/pages/about_page.dart';
 import 'package:stock_managing/pages/edit_item_page.dart';
 import 'package:stock_managing/pages/item_details_page.dart';
+import 'package:stock_managing/pages/my_template_page.dart';
 import 'package:stock_managing/pages/settings_page.dart';
+import 'package:stock_managing/tools/data_processing.dart';
 import 'package:stock_managing/tools/my_ssh.dart';
 import 'package:stock_managing/tools/server_communication.dart';
 
@@ -141,8 +143,8 @@ class _MyHomePageState extends State<MyHomePage> {
             ListTile(
               title: const Text('模板设置'),
               onTap: () {
-                Navigator.of(context).push(
-                    MaterialPageRoute(builder: (context) => const AboutPage()));
+                Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) => const MyTemplatePage()));
               },
             ),
             ListTile(
@@ -247,6 +249,8 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _downloadItemsInfo() async {
+    pref = await loadUserPreferences();
+    serverInfo = loadSshServerInfoFromPref(pref);
     var result = await downloadJsonFromServer();
     var mainJsonPath = result[1];
     itemsInfo = jsonDecode(File(mainJsonPath).readAsStringSync());
