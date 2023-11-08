@@ -3,15 +3,19 @@ import 'dart:io';
 
 import 'package:archive/archive_io.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:stock_managing/main.dart';
+import 'package:stock_managing/tools/app_provider.dart';
 import 'package:stock_managing/tools/my_ssh.dart';
 
 Future<SharedPreferences> loadUserPreferences() async {
   SharedPreferences pref = await SharedPreferences.getInstance();
+
+  if (pref.getInt('themeColor') == null) {
+    await pref.setInt('themeColor', 0);
+  }
 
   if (pref.getString('ip') == null) {
     await pref.setString('ip', '131theater.tpddns.cn');
@@ -25,6 +29,16 @@ Future<SharedPreferences> loadUserPreferences() async {
   }
 
   return pref;
+}
+
+void changeThemeColor(BuildContext context) async {
+  var pref = await loadUserPreferences();
+  int? colorIndex = pref.getInt('themeColor');
+  colorIndex ??= 0;
+  colorIndex = (colorIndex + 1) % 100;
+  if (!context.mounted) return;
+  Provider.of<AppInfoProvider>(context, listen: false).setTheme(colorIndex);
+  pref.setInt('themeColor', colorIndex);
 }
 
 void setStringToTextController(var textController, var str) {

@@ -147,7 +147,11 @@ class _SettingsPageState extends State<SettingsPage> {
                 child: ElevatedButton(
                     onPressed: () async {
                       var result = await sshTryServer(serverInfo);
-                      final snackBar = SnackBar(content: Text(result[1]));
+                      final snackBar = SnackBar(
+                          content: Text(result[1]),
+                          duration: const Duration(seconds: 5),
+                          action:
+                              SnackBarAction(label: '关闭', onPressed: () {}));
                       if (!context.mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(snackBar);
                     },

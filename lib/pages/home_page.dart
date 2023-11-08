@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:stock_managing/pages/about_page.dart';
@@ -9,16 +10,16 @@ import 'package:stock_managing/pages/edit_item_page.dart';
 import 'package:stock_managing/pages/item_details_page.dart';
 import 'package:stock_managing/pages/my_template_page.dart';
 import 'package:stock_managing/pages/settings_page.dart';
+import 'package:stock_managing/tools/app_provider.dart';
 import 'package:stock_managing/tools/data_processing.dart';
 import 'package:stock_managing/tools/my_ssh.dart';
+import 'package:stock_managing/tools/prepare_repository.dart';
 import 'package:stock_managing/tools/server_communication.dart';
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage(
-      {super.key, required this.title, required this.serverResult});
+  const MyHomePage({super.key, required this.title});
 
   final String title;
-  final List serverResult;
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
@@ -39,47 +40,74 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
+    _initThemeColor();
     var widgetsBinding = WidgetsBinding.instance;
     widgetsBinding.addPostFrameCallback((timeStamp) {
-      const snackBar =
-          SnackBar(content: Text('满席'), duration: Duration(seconds: 2));
+      _sshServerTest();
+    });
+  }
+
+  void _initThemeColor() async {
+    var pref = await loadUserPreferences();
+    int colorIndex = pref.getInt('themeColor')!;
+    if (!context.mounted) return;
+    Provider.of<AppInfoProvider>(context, listen: false).setTheme(colorIndex);
+  }
+
+  void _sshServerTest() async {
+    var snackBar = SnackBar(
+        content: const Text('测试与服务器的连接情况……'),
+        duration: const Duration(days: 365),
+        action: SnackBarAction(label: '关闭', onPressed: () {}));
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+    var pref = await loadUserPreferences();
+    var serverInfo = loadSshServerInfoFromPref(pref);
+    var res = await Future.wait([sshTryServer(serverInfo)]);
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).removeCurrentSnackBar();
+    var result = res[0];
+    if (result[0]) {
+      const snackBar2 =
+          SnackBar(content: Text('服务器连接正常！'), duration: Duration(seconds: 2));
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(snackBar);
-      if ((!widget.serverResult[0]) && !alerted) {
-        showDialog(
-            context: context,
-            builder: (context) {
-              return AlertDialog(
-                title: const Text('服务器连接失败！'),
-                content: Text(widget.serverResult[1]),
-                actions: <Widget>[
-                  TextButton(
-                      child: const Text(
-                        '取消',
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                      onPressed: () {
-                        Navigator.pop(context, "取消");
-                      }),
-                  TextButton(
+      ScaffoldMessenger.of(context).showSnackBar(snackBar2);
+      await Future.wait([prepareRemoteRepository(), prepareLocalRepository()]);
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).removeCurrentSnackBar();
+      _downloadItemsInfo();
+    } else {
+      if (!context.mounted) return;
+      showDialog(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              title: const Text('服务器连接失败！'),
+              content: Text(result[1]),
+              actions: <Widget>[
+                TextButton(
                     child: const Text(
-                      '前往设置',
-                      style: TextStyle(color: Colors.blue),
+                      '取消',
+                      style: TextStyle(color: Colors.grey),
                     ),
                     onPressed: () {
-                      Navigator.pop(context);
-                      Navigator.of(context).push(MaterialPageRoute(
-                          builder: (context) => const SettingsPage()));
-                    },
+                      Navigator.pop(context, "取消");
+                    }),
+                TextButton(
+                  child: const Text(
+                    '前往设置',
+                    style: TextStyle(color: Colors.blue),
                   ),
-                ],
-              );
-            });
-      }
-      alerted = true;
-    });
-
-    // if (alerted) _downloadItemsInfo();
+                  onPressed: () {
+                    Navigator.pop(context);
+                    Navigator.of(context).push(MaterialPageRoute(
+                        builder: (context) => const SettingsPage()));
+                  },
+                ),
+              ],
+            );
+          });
+    }
   }
 
   @override
@@ -149,6 +177,12 @@ class _MyHomePageState extends State<MyHomePage> {
               onTap: () {
                 Navigator.of(context).push(MaterialPageRoute(
                     builder: (context) => const MyTemplatePage()));
+              },
+            ),
+            ListTile(
+              title: const Text('切换主题'),
+              onTap: () {
+                changeThemeColor(context);
               },
             ),
             ListTile(
@@ -253,6 +287,13 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _downloadItemsInfo() async {
+    var snackBar = SnackBar(
+        content: const Text('数据更新中……'),
+        duration: const Duration(days: 365),
+        action: SnackBarAction(label: '关闭', onPressed: () {}));
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+
     pref = await loadUserPreferences();
     serverInfo = loadSshServerInfoFromPref(pref);
     var result = await downloadJsonFromServer();
@@ -263,5 +304,13 @@ class _MyHomePageState extends State<MyHomePage> {
       itemsId.add(key);
     }
     setState(() {});
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).removeCurrentSnackBar();
+    snackBar = SnackBar(
+        content: const Text('更新成功！'),
+        duration: const Duration(seconds: 1),
+        action: SnackBarAction(label: '关闭', onPressed: () {}));
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 }

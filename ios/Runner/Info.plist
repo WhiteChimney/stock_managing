@@ -38,10 +38,14 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-	<key>NSCameraUsageDescription</key>
-	<string>求求了</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>真麻烦</string>
+	<key>NSCameraUsageDescription</key>
+	<string>求求了</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>gallery</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>gallery full</string>
 	<key>UISupportedInterfaceOrientations~ipad</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>

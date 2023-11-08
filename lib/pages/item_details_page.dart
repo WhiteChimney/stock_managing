@@ -25,19 +25,19 @@ class _ItemDetailsPageState extends State<ItemDetailsPage> {
   @override
   void initState() {
     super.initState();
-    if (widget.itemId != '') _loadData(widget.itemId);
     var widgetsBinding = WidgetsBinding.instance;
     widgetsBinding.addPostFrameCallback((timeStamp) {
-      const snackBar = SnackBar(
-        content: Text('数据加载中，请稍候……'),
-        duration: Duration(seconds: 1),
-      );
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(snackBar);
+      if (widget.itemId != '') _loadData(widget.itemId);
     });
   }
 
   void _loadData(String itemId) async {
+    var snackBar = SnackBar(
+        content: const Text('数据加载中，请稍候……'),
+        duration: const Duration(days: 365),
+        action: SnackBarAction(label: '关闭', onPressed: () {}));
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
     var result = await Future.wait([loadItemInfo(widget.itemId)]);
     var itemInfo = result[0];
     json = itemInfo[0];
@@ -48,6 +48,8 @@ class _ItemDetailsPageState extends State<ItemDetailsPage> {
       keyList.add(key);
     }
     setState(() {});
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).removeCurrentSnackBar();
   }
 
   @override

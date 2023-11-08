@@ -1,14 +1,14 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math';
 
-import 'package:camera/camera.dart';
+// import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
 import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:image_picker/image_picker.dart';
 
-import 'package:stock_managing/tools/my_cameras.dart';
+// import 'package:stock_managing/tools/my_cameras.dart';
 import 'package:stock_managing/tools/data_processing.dart';
 import 'package:stock_managing/tools/my_ssh.dart';
 import 'package:stock_managing/tools/server_communication.dart';
@@ -47,14 +47,23 @@ class _EditItemPageState extends State<EditItemPage> {
   @override
   void initState() {
     super.initState();
-    if (widget.itemId.isEmpty) {
-      _loadTemplate();
-    } else {
-      _loadData(widget.itemId);
-    }
+    var widgetsBinding = WidgetsBinding.instance;
+    widgetsBinding.addPostFrameCallback((timeStamp) {
+      if (widget.itemId.isEmpty) {
+        _loadTemplate();
+      } else {
+        _loadData(widget.itemId);
+      }
+    });
   }
 
   void _loadData(String itemId) async {
+    var snackBar = SnackBar(
+        content: const Text('数据加载中，请稍候……'),
+        duration: const Duration(days: 365),
+        action: SnackBarAction(label: '关闭', onPressed: () {}));
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
     var itemInfo = await loadItemInfo(widget.itemId);
     json = itemInfo[0];
     tag = itemInfo[1];
@@ -69,6 +78,8 @@ class _EditItemPageState extends State<EditItemPage> {
       contentControllers.add(contentController);
     }
     setState(() {});
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).removeCurrentSnackBar();
   }
 
   void _loadTemplate() async {
@@ -102,7 +113,6 @@ class _EditItemPageState extends State<EditItemPage> {
                 onPressed: () async {
                   if (widget.itemId.isEmpty) {
                     if (!(await checkIdValidity(idController.text))) {
-                      print('alert');
                       const snackBar = SnackBar(
                           content: Text('物品 ID 号为空或与已有物品重复！'),
                           duration: Duration(seconds: 2));
@@ -111,10 +121,10 @@ class _EditItemPageState extends State<EditItemPage> {
                       return;
                     }
                   }
-                  const snackBar = SnackBar(
-                    content: Text('文件上传中，请稍候……'),
-                    duration: Duration(seconds: 2),
-                  );
+                  var snackBar = SnackBar(
+                      content: const Text('文件上传中，请稍候……'),
+                      duration: const Duration(days: 365),
+                      action: SnackBarAction(label: '关闭', onPressed: () {}));
                   if (!context.mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(snackBar);
 
@@ -129,6 +139,7 @@ class _EditItemPageState extends State<EditItemPage> {
                         labelList, contentList, picPaths, filePaths)
                   ]);
                   if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).removeCurrentSnackBar();
                   Navigator.pop(context);
                 },
                 icon: const Icon(Icons.check)),
@@ -295,13 +306,55 @@ class _EditItemPageState extends State<EditItemPage> {
 
   void addPictures() async {
     if (Platform.isIOS || Platform.isAndroid) {
-      CameraDescription camera = await getCamera();
-      if (!context.mounted) return;
-      final result = await Navigator.push(context,
-          MaterialPageRoute(builder: (_) => TakePictureScreen(camera: camera)));
-      String picPath = result.path;
-      picPaths.add(picPath);
-      setState(() {});
+      showModalBottomSheet<void>(
+        context: context,
+        builder: (BuildContext context) {
+          return Container(
+            height: 200,
+            color: Theme.of(context).colorScheme.onInverseSurface,
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: ElevatedButton(
+                      child: const Text('拍照'),
+                      onPressed: () async {
+                        final ImagePicker picker = ImagePicker();
+                        final XFile? file =
+                            await picker.pickImage(source: ImageSource.camera);
+                        var picPath = file == null ? '' : file.path;
+                        picPaths.add(picPath);
+                        setState(() {});
+                        if (!context.mounted) return;
+                        Navigator.pop(context);
+                      },
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: ElevatedButton(
+                      child: const Text('相册'),
+                      onPressed: () async {
+                        final ImagePicker picker = ImagePicker();
+                        final XFile? file =
+                            await picker.pickImage(source: ImageSource.gallery);
+                        var picPath = file == null ? '' : file.path;
+                        picPaths.add(picPath);
+                        setState(() {});
+                        if (!context.mounted) return;
+                        Navigator.pop(context);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
     } else {
       FilePickerResult? result = await FilePicker.platform.pickFiles();
 
@@ -317,7 +370,7 @@ class _EditItemPageState extends State<EditItemPage> {
       children: [
         Image.file(
           File(picPath),
-          height: 144,
+          height: 136,
           errorBuilder:
               (BuildContext context, Object exception, StackTrace? stackTrace) {
             return const Image(
