@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
@@ -45,7 +47,11 @@ class _EditItemPageState extends State<EditItemPage> {
   @override
   void initState() {
     super.initState();
-    if (widget.itemId != '') _loadData(widget.itemId);
+    if (widget.itemId.isEmpty) {
+      _loadTemplate();
+    } else {
+      _loadData(widget.itemId);
+    }
   }
 
   void _loadData(String itemId) async {
@@ -65,6 +71,26 @@ class _EditItemPageState extends State<EditItemPage> {
     setState(() {});
   }
 
+  void _loadTemplate() async {
+    var pref = await loadUserPreferences();
+    var serverInfo = loadSshServerInfoFromPref(pref);
+    var cacheDir = await getApplicationCacheDirectory();
+    var templatePath =
+        path.join(cacheDir.path, serverInfo.username, 'template.json');
+    if (!File(templatePath).existsSync()) {
+      File(templatePath).createSync(recursive: true);
+      File(templatePath).writeAsStringSync('{}');
+    }
+    var templateJson = jsonDecode(File(templatePath).readAsStringSync());
+    for (var key in templateJson.keys) {
+      var labelController = TextEditingController(text: templateJson[key]);
+      var contentController = TextEditingController();
+      labelControllers.add(labelController);
+      contentControllers.add(contentController);
+    }
+    setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -74,6 +100,17 @@ class _EditItemPageState extends State<EditItemPage> {
           actions: [
             IconButton(
                 onPressed: () async {
+                  if (widget.itemId.isEmpty) {
+                    if (!(await checkIdValidity(idController.text))) {
+                      print('alert');
+                      const snackBar = SnackBar(
+                          content: Text('物品 ID 号为空或与已有物品重复！'),
+                          duration: Duration(seconds: 2));
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                      return;
+                    }
+                  }
                   const snackBar = SnackBar(
                     content: Text('文件上传中，请稍候……'),
                     duration: Duration(seconds: 2),
@@ -93,21 +130,22 @@ class _EditItemPageState extends State<EditItemPage> {
                   ]);
                   if (!context.mounted) return;
                   Navigator.pop(context);
-                  // Navigator.pushReplacementNamed(context, '/homePage');
                 },
                 icon: const Icon(Icons.check)),
           ],
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: () async {
-              var pref = await loadUserPreferences();
-              SshServerInfo serverInfo = loadSshServerInfoFromPref(pref);
-              var cacheDir = await getApplicationCacheDirectory();
-              var userDir = path.join(cacheDir.path, serverInfo.username);
-              var stockingDir = path.join(userDir, 'stockings');
-              var itemsDir = path.join(stockingDir, 'items');
-              var jsonDir = path.join(itemsDir, widget.itemId);
-              Directory(jsonDir).deleteSync(recursive: true);
+              if (widget.itemId.isNotEmpty) {
+                var pref = await loadUserPreferences();
+                SshServerInfo serverInfo = loadSshServerInfoFromPref(pref);
+                var cacheDir = await getApplicationCacheDirectory();
+                var userDir = path.join(cacheDir.path, serverInfo.username);
+                var stockingDir = path.join(userDir, 'stockings');
+                var itemsDir = path.join(stockingDir, 'items');
+                var jsonDir = path.join(itemsDir, widget.itemId);
+                Directory(jsonDir).deleteSync(recursive: true);
+              }
               if (!context.mounted) return;
               Navigator.pop(context);
             },

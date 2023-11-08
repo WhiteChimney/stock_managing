@@ -34,10 +34,10 @@ class _MyAppState extends State<MyApp> {
         useMaterial3: true,
       ),
       home: MyHomePage(title: '主页', serverResult: widget.result),
-      routes: {
-        '/homePage': (context) =>
-            MyHomePage(title: '主页', serverResult: widget.result),
-      },
+      // routes: {
+      // '/homePage': (context) =>
+      // MyHomePage(title: '主页', serverResult: widget.result),
+      // },
     );
   }
 }

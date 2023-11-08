@@ -15,8 +15,14 @@ class MyTemplatePage extends StatefulWidget {
 }
 
 class _MyTemplatePageState extends State<MyTemplatePage> {
+  // controllers 为列表，因为需要排序
+  // 其与 controllerKeys 一一对应，key 为象征性的序号
+
   Map<String, dynamic> templateJson = {};
+  List<String> controllerKeys = [];
   List<TextEditingController> controllers = [];
+  int keyCount = 0;
+
   @override
   void initState() {
     super.initState();
@@ -37,10 +43,20 @@ class _MyTemplatePageState extends State<MyTemplatePage> {
     }
     controllers.clear();
     for (var key in templateJson.keys) {
-      var controller = TextEditingController();
-      setStringToTextController(controller, templateJson[key]);
+      var controller = TextEditingController(text: templateJson[key]);
       controllers.add(controller);
+      controllerKeys.add(key);
     }
+    keyCount = templateJson.length;
+    setState(() {});
+  }
+
+  @override
+  void dispose() {
+    for (final controller in controllers) {
+      controller.dispose();
+    }
+    super.dispose();
   }
 
   @override
@@ -56,20 +72,25 @@ class _MyTemplatePageState extends State<MyTemplatePage> {
         ),
         title: const Text('模板设置'),
         actions: [
-          IconButton(onPressed: () {}, icon: const Icon(Icons.check)),
+          IconButton(
+              onPressed: () {
+                _saveTemplateItems();
+                Navigator.pop(context);
+              },
+              icon: const Icon(Icons.check)),
         ],
       ),
       body: ReorderableListView(
         children: <Widget>[
-          for (var controller in controllers)
+          for (int index = 0; index < keyCount; index++)
             Container(
-              key: ValueKey(controller.text),
+              key: ValueKey(controllerKeys[index]),
               height: 100,
               margin: const EdgeInsets.all(8.0),
               decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.onInverseSurface,
                   borderRadius: BorderRadius.circular(10)),
-              child: _generateItems(controller),
+              child: _generateItems(controllers[index]),
             )
         ],
         onReorder: (int oldIndex, int newIndex) {
@@ -78,11 +99,35 @@ class _MyTemplatePageState extends State<MyTemplatePage> {
           }
           var child = controllers.removeAt(oldIndex);
           controllers.insert(newIndex, child);
+          var childKey = controllerKeys.removeAt(oldIndex);
+          controllerKeys.insert(newIndex, childKey);
           setState(() {});
         },
       ),
+      // body: ReorderableListView.builder(
+      //   itemCount: controllers.length,
+      //   itemBuilder: (context, index) {
+      //     return Container(
+      //       key: ValueKey(controllers[index].text),
+      //       height: 100,
+      //       margin: const EdgeInsets.all(8.0),
+      //       decoration: BoxDecoration(
+      //           color: Theme.of(context).colorScheme.onInverseSurface,
+      //           borderRadius: BorderRadius.circular(10)),
+      //       child: _generateItems(controllers[index]),
+      //     );
+      //   },
+      //   onReorder: (int oldIndex, int newIndex) {
+      //     if (oldIndex < newIndex) {
+      //       newIndex -= 1;
+      //     }
+      //     var child = controllers.removeAt(oldIndex);
+      //     controllers.insert(newIndex, child);
+      //     setState(() {});
+      //   },
+      // ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {},
+        onPressed: _addTemplateItem,
         tooltip: '添加条目',
         child: const Icon(Icons.add),
       ),
@@ -113,5 +158,31 @@ class _MyTemplatePageState extends State<MyTemplatePage> {
         ),
       ],
     );
+  }
+
+  void _addTemplateItem() {
+    var controller = TextEditingController();
+    controllers.add(controller);
+    controllerKeys.add(keyCount.toString());
+    keyCount++;
+    setState(() {});
+  }
+
+  void _saveTemplateItems() async {
+    Map<String, dynamic> saveTemplateJson = {};
+    var indexCount = 0;
+    for (var index = 0; index < controllers.length; index++) {
+      var text = controllers[index].text;
+      if (text.isNotEmpty) {
+        saveTemplateJson[indexCount.toString()] = text;
+        indexCount++;
+      }
+    }
+    var pref = await loadUserPreferences();
+    var serverInfo = loadSshServerInfoFromPref(pref);
+    var cacheDir = await getApplicationCacheDirectory();
+    var templatePath =
+        path.join(cacheDir.path, serverInfo.username, 'template.json');
+    await File(templatePath).writeAsString(jsonEncode(saveTemplateJson));
   }
 }

@@ -41,6 +41,10 @@ class _MyHomePageState extends State<MyHomePage> {
     super.initState();
     var widgetsBinding = WidgetsBinding.instance;
     widgetsBinding.addPostFrameCallback((timeStamp) {
+      const snackBar =
+          SnackBar(content: Text('满席'), duration: Duration(seconds: 2));
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(snackBar);
       if ((!widget.serverResult[0]) && !alerted) {
         showDialog(
             context: context,
@@ -193,7 +197,7 @@ class _MyHomePageState extends State<MyHomePage> {
           alignment: Alignment.centerLeft,
           child: Padding(
             padding: EdgeInsets.only(left: 16),
-            child: Icon(Icons.favorite),
+            child: Icon(Icons.edit),
           ),
         ),
       ),
