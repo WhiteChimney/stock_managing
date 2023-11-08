@@ -87,11 +87,10 @@ class _EditItemPageState extends State<EditItemPage> {
                     labelList.add(labelControllers[i].text);
                     contentList.add(contentControllers[i].text);
                   }
-                  var res = await Future.wait([
+                  await Future.wait([
                     saveItemInfo(idController.text, tagController.text,
                         labelList, contentList, picPaths, filePaths)
                   ]);
-                  print(res[0]);
                   if (!context.mounted) return;
                   Navigator.pop(context);
                   // Navigator.pushReplacementNamed(context, '/homePage');
