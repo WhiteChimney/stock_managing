@@ -136,7 +136,7 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
             ),
             ListTile(
-              title: const Text('设置'),
+              title: const Text('服务器设置'),
               onTap: () {
                 Navigator.of(context).push(MaterialPageRoute(
                     builder: (context) => const SettingsPage()));

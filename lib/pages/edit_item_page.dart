@@ -402,7 +402,7 @@ class _EditItemPageState extends State<EditItemPage> {
       children: [
         const Icon(Icons.file_present),
         SizedBox(
-          width: MediaQuery.of(context).size.width - 64,
+          width: MediaQuery.of(context).size.width - 72,
           child: Text(path.basename(filePath)),
         ),
         IconButton(

@@ -18,14 +18,14 @@ Future<SharedPreferences> loadUserPreferences() async {
   }
 
   if (pref.getString('ip') == null) {
-    await pref.setString('ip', '131theater.tpddns.cn');
+    await pref.setString('ip', '127.0.0.1');
   }
-  if (pref.getInt('port') == null) await pref.setInt('port', 13117);
+  if (pref.getInt('port') == null) await pref.setInt('port', 22);
   if (pref.getString('username') == null) {
-    await pref.setString('username', 'noland');
+    await pref.setString('username', 'guest');
   }
   if (pref.getString('password') == null) {
-    await pref.setString('password', 'zxh12345');
+    await pref.setString('password', 'password');
   }
 
   return pref;

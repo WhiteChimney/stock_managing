@@ -121,10 +121,11 @@ class _SettingsPageState extends State<SettingsPage> {
                     Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: TextField(
-                        decoration: InputDecoration(
-                          border: const OutlineInputBorder(),
-                          hintText: serverInfo.password,
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(),
+                          hintText: '密码',
                         ),
+                        obscureText: true,
                         controller: textPasswordController,
                       ),
                     ),

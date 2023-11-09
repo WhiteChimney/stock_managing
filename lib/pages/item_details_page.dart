@@ -1,7 +1,12 @@
 import 'dart:io';
 
+import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:stock_managing/tools/data_processing.dart';
+import 'package:stock_managing/tools/my_ssh.dart';
 
 import 'package:stock_managing/tools/server_communication.dart';
 
@@ -186,10 +191,50 @@ class _ItemDetailsPageState extends State<ItemDetailsPage> {
       children: [
         const Icon(Icons.file_present),
         SizedBox(
-          width: MediaQuery.of(context).size.width - 64,
+          width: MediaQuery.of(context).size.width - 72,
           child: Text(path.basename(file)),
+        ),
+        IconButton(
+          onPressed: () {
+            _downloadAndShare(context, file);
+          },
+          icon: const Icon(Icons.download),
         ),
       ],
     );
+  }
+
+  void _downloadAndShare(BuildContext context, String file) async {
+    var pref = await loadUserPreferences();
+    var serverInfo = loadSshServerInfoFromPref(pref);
+    var cacheDir = await getApplicationCacheDirectory();
+    var localFile = path.join(cacheDir.path, serverInfo.username, 'stockings',
+        'items', widget.itemId, 'files', file);
+    var remoteFile =
+        '/home/${serverInfo.username}/stockings/items/${widget.itemId}/files/$file';
+    var result = await sshConnectServer(serverInfo);
+    print('done1');
+    if (!result[0]) return;
+    var client = result[2];
+    result =
+        await Future.wait([sftpReceiveFile(client, remoteFile, localFile)]);
+    result = result[0];
+    if (!result[0]) return;
+
+    if (Platform.isIOS || Platform.isAndroid) {
+      if (!context.mounted) return;
+      final box = context.findRenderObject() as RenderBox?;
+
+      await Share.shareXFiles(
+        [XFile(localFile)],
+        subject: file,
+        sharePositionOrigin: box!.localToGlobal(Offset.zero) & box.size,
+      );
+    } else {
+      final FileSaveLocation? savePath =
+          await getSaveLocation(suggestedName: file);
+      if (savePath == null) return;
+      await File(localFile).copy(savePath.path);
+    }
   }
 }
