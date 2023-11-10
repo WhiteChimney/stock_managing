@@ -151,8 +151,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       final snackBar = SnackBar(
                           content: Text(result[1]),
                           duration: const Duration(seconds: 5),
-                          action:
-                              SnackBarAction(label: '关闭', onPressed: () {}));
+                          action: SnackBarAction(label: '好', onPressed: () {}));
                       if (!context.mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(snackBar);
                     },

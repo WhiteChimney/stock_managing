@@ -25,6 +25,8 @@ class _EditItemPageState extends State<EditItemPage> {
   TextEditingController tagController = TextEditingController();
   List<TextEditingController> labelControllers = [];
   List<TextEditingController> contentControllers = [];
+  List<FocusNode> focusNodes = [];
+  final ScrollController _scrollController = ScrollController();
 
   Map<String, dynamic> json = {};
   String tag = '';
@@ -61,7 +63,7 @@ class _EditItemPageState extends State<EditItemPage> {
     var snackBar = SnackBar(
         content: const Text('数据加载中，请稍候……'),
         duration: const Duration(days: 365),
-        action: SnackBarAction(label: '关闭', onPressed: () {}));
+        action: SnackBarAction(label: '好', onPressed: () {}));
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
     var itemInfo = await loadItemInfo(widget.itemId);
@@ -74,8 +76,10 @@ class _EditItemPageState extends State<EditItemPage> {
     for (var key in json.keys) {
       var labelController = TextEditingController(text: key);
       var contentController = TextEditingController(text: json[key]);
+      var focusNode = FocusNode();
       labelControllers.add(labelController);
       contentControllers.add(contentController);
+      focusNodes.add(focusNode);
     }
     setState(() {});
     if (!context.mounted) return;
@@ -96,7 +100,9 @@ class _EditItemPageState extends State<EditItemPage> {
     for (var key in templateJson.keys) {
       var labelController = TextEditingController(text: templateJson[key]);
       var contentController = TextEditingController();
+      var focusNode = FocusNode();
       labelControllers.add(labelController);
+      focusNodes.add(focusNode);
       contentControllers.add(contentController);
     }
     setState(() {});
@@ -124,10 +130,9 @@ class _EditItemPageState extends State<EditItemPage> {
                   var snackBar = SnackBar(
                       content: const Text('文件上传中，请稍候……'),
                       duration: const Duration(days: 365),
-                      action: SnackBarAction(label: '关闭', onPressed: () {}));
+                      action: SnackBarAction(label: '好', onPressed: () {}));
                   if (!context.mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(snackBar);
-
                   List<String> labelList = [];
                   List<String> contentList = [];
                   for (int i = 0; i < labelControllers.length; i++) {
@@ -165,6 +170,7 @@ class _EditItemPageState extends State<EditItemPage> {
         behavior: HitTestBehavior.translucent,
         onTap: () => FocusScope.of(context).requestFocus(FocusNode()),
         child: CustomScrollView(
+          controller: _scrollController,
           slivers: <Widget>[
             SliverToBoxAdapter(
               child: TextField(
@@ -236,8 +242,8 @@ class _EditItemPageState extends State<EditItemPage> {
             SliverList(
               delegate: SliverChildBuilderDelegate(
                 (BuildContext context, int index) {
-                  return generateEntryWidget(
-                      labelControllers[index], contentControllers[index]);
+                  return generateEntryWidget(labelControllers[index],
+                      contentControllers[index], focusNodes[index]);
                 },
                 childCount: labelControllers.length,
               ),
@@ -254,7 +260,7 @@ class _EditItemPageState extends State<EditItemPage> {
   }
 
   Column generateEntryWidget(TextEditingController labelController,
-      TextEditingController contentController) {
+      TextEditingController contentController, FocusNode focusNode) {
     return Column(
       children: [
         Padding(
@@ -267,6 +273,7 @@ class _EditItemPageState extends State<EditItemPage> {
               hintText: '条目名称',
             ),
             controller: labelController,
+            focusNode: focusNode,
           ),
         ),
         Padding(
@@ -287,6 +294,7 @@ class _EditItemPageState extends State<EditItemPage> {
           onPressed: () {
             labelController.dispose();
             labelControllers.remove(labelController);
+            focusNodes.remove(focusNode);
             contentController.dispose();
             contentControllers.remove(contentController);
             setState(() {});
@@ -299,9 +307,13 @@ class _EditItemPageState extends State<EditItemPage> {
   void addEntry() {
     final labelController = TextEditingController();
     final contentController = TextEditingController();
+    final focusNode = FocusNode();
     labelControllers.add(labelController);
     contentControllers.add(contentController);
+    focusNodes.add(focusNode);
     setState(() {});
+    focusNode.requestFocus();
+    _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
   }
 
   void addPictures() async {

@@ -40,7 +40,7 @@ class _ItemDetailsPageState extends State<ItemDetailsPage> {
     var snackBar = SnackBar(
         content: const Text('数据加载中，请稍候……'),
         duration: const Duration(days: 365),
-        action: SnackBarAction(label: '关闭', onPressed: () {}));
+        action: SnackBarAction(label: '好', onPressed: () {}));
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
     var result = await Future.wait([loadItemInfo(widget.itemId)]);
@@ -136,7 +136,7 @@ class _ItemDetailsPageState extends State<ItemDetailsPage> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {},
+        onPressed: () async {},
         tooltip: '我要借',
         child: const Icon(Icons.thumb_up),
       ),

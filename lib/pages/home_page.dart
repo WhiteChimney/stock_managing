@@ -58,7 +58,7 @@ class _MyHomePageState extends State<MyHomePage> {
     var snackBar = SnackBar(
         content: const Text('测试与服务器的连接情况……'),
         duration: const Duration(days: 365),
-        action: SnackBarAction(label: '关闭', onPressed: () {}));
+        action: SnackBarAction(label: '好', onPressed: () {}));
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
     var pref = await loadUserPreferences();
@@ -270,7 +270,10 @@ class _MyHomePageState extends State<MyHomePage> {
         _downloadItemsInfo();
       },
       child: ListTile(
-        leading: const Icon(Icons.file_download_done),
+        visualDensity:
+            const VisualDensity(vertical: VisualDensity.maximumDensity),
+        leading: const Image(
+            image: AssetImage('assets/images/image_loading_failed.png')),
         title: Text(itemsId[index]),
         subtitle: Text(itemsInfo[itemsId[index]]),
         trailing: const Icon(Icons.keyboard_arrow_right_outlined),
@@ -290,7 +293,7 @@ class _MyHomePageState extends State<MyHomePage> {
     var snackBar = SnackBar(
         content: const Text('数据更新中……'),
         duration: const Duration(days: 365),
-        action: SnackBarAction(label: '关闭', onPressed: () {}));
+        action: SnackBarAction(label: '好', onPressed: () {}));
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
 
@@ -309,7 +312,7 @@ class _MyHomePageState extends State<MyHomePage> {
     snackBar = SnackBar(
         content: const Text('更新成功！'),
         duration: const Duration(seconds: 1),
-        action: SnackBarAction(label: '关闭', onPressed: () {}));
+        action: SnackBarAction(label: '好', onPressed: () {}));
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }

@@ -39,6 +39,51 @@ Future<List> downloadJsonFromServer() async {
   return [result, localMainJson];
 }
 
+Future<List> downloadFirstImage(String itemId) async {
+  // 用于首页展示物品时显示，选取物品的第一张照片
+
+  // 将缓存图片放置于 stockings 同级目录下
+  // 这样与实际的仓库分开，可以被清理
+  // 且可用于缓存图片，不需要每次都加载；可以手动刷新
+
+  // 加载物品信息时，items.json 文件中包含条目名称，但本地缓存中不存在具体信息
+  // 需要先新建文件夹：username/tempImages
+  SharedPreferences pref = await loadUserPreferences();
+  SshServerInfo serverInfo = loadSshServerInfoFromPref(pref);
+  var cacheDir = await getApplicationCacheDirectory();
+  var tempImageDir =
+      path.join(cacheDir.path, serverInfo.username, 'tempImages');
+  await Directory(tempImageDir).create(recursive: true);
+
+  String picPath = ''; // 文件返回的是 basename 列表
+
+  // 该情况为新建物品，直接返回空白列表
+  if (itemId == '') return [false, null, picPath];
+
+  // 其次为已存在的物品，需要获取远程目录下所有图片信息
+  var result = await sshConnectServer(serverInfo);
+  if (!result[0]) return [false, result[1], picPath];
+  SSHClient client = result[2];
+  result = await sftpListFiles(
+      client, '/home/${serverInfo.username}/stockings/items/$itemId/images');
+  if (!result[0]) return [false, result[1], picPath];
+  var remotePicList = result[2];
+
+  for (var remotePic in remotePicList) {
+    var mimetype = lookupMimeType(remotePic);
+    if (mimetype != null && mimetype.startsWith('image/')) {
+      picPath = path.join(tempImageDir, '$itemId${path.extension(remotePic)}');
+      result = await sftpReceiveFile(
+          client,
+          '/home/${serverInfo.username}/stockings/items/$itemId/images/$remotePic',
+          picPath);
+      if (!result[0]) return [false, result[1], ''];
+      break;
+    }
+  }
+  return [true, result[1], picPath];
+}
+
 Future<List> loadItemInfo(String itemId) async {
   // 加载物品信息时，items.json 文件中包含条目名称，但本地缓存中不存在具体信息
   // 需要先新建文件夹：items/itemId, items/itemId/images, items/itemId/files

@@ -21,6 +21,8 @@ class _MyTemplatePageState extends State<MyTemplatePage> {
   Map<String, dynamic> templateJson = {};
   List<String> controllerKeys = [];
   List<TextEditingController> controllers = [];
+  List<FocusNode> focusNodes = [];
+  final ScrollController _scrollController = ScrollController();
   int keyCount = 0;
 
   @override
@@ -44,7 +46,9 @@ class _MyTemplatePageState extends State<MyTemplatePage> {
     controllers.clear();
     for (var key in templateJson.keys) {
       var controller = TextEditingController(text: templateJson[key]);
+      var focusNode = FocusNode();
       controllers.add(controller);
+      focusNodes.add(focusNode);
       controllerKeys.add(key);
     }
     keyCount = templateJson.length;
@@ -81,6 +85,7 @@ class _MyTemplatePageState extends State<MyTemplatePage> {
         ],
       ),
       body: ReorderableListView(
+        scrollController: _scrollController,
         children: <Widget>[
           for (int index = 0; index < keyCount; index++)
             Container(
@@ -90,7 +95,7 @@ class _MyTemplatePageState extends State<MyTemplatePage> {
               decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.onInverseSurface,
                   borderRadius: BorderRadius.circular(10)),
-              child: _generateItems(controllers[index]),
+              child: _generateItems(controllers[index], focusNodes[index]),
             )
         ],
         onReorder: (int oldIndex, int newIndex) {
@@ -99,33 +104,13 @@ class _MyTemplatePageState extends State<MyTemplatePage> {
           }
           var child = controllers.removeAt(oldIndex);
           controllers.insert(newIndex, child);
+          var focusNode = focusNodes.removeAt(oldIndex);
+          focusNodes.insert(newIndex, focusNode);
           var childKey = controllerKeys.removeAt(oldIndex);
           controllerKeys.insert(newIndex, childKey);
           setState(() {});
         },
       ),
-      // body: ReorderableListView.builder(
-      //   itemCount: controllers.length,
-      //   itemBuilder: (context, index) {
-      //     return Container(
-      //       key: ValueKey(controllers[index].text),
-      //       height: 100,
-      //       margin: const EdgeInsets.all(8.0),
-      //       decoration: BoxDecoration(
-      //           color: Theme.of(context).colorScheme.onInverseSurface,
-      //           borderRadius: BorderRadius.circular(10)),
-      //       child: _generateItems(controllers[index]),
-      //     );
-      //   },
-      //   onReorder: (int oldIndex, int newIndex) {
-      //     if (oldIndex < newIndex) {
-      //       newIndex -= 1;
-      //     }
-      //     var child = controllers.removeAt(oldIndex);
-      //     controllers.insert(newIndex, child);
-      //     setState(() {});
-      //   },
-      // ),
       floatingActionButton: FloatingActionButton(
         onPressed: _addTemplateItem,
         tooltip: '添加条目',
@@ -134,7 +119,7 @@ class _MyTemplatePageState extends State<MyTemplatePage> {
     );
   }
 
-  Row _generateItems(TextEditingController controller) {
+  Row _generateItems(TextEditingController controller, FocusNode focusNode) {
     return Row(
       children: [
         SizedBox(
@@ -149,6 +134,7 @@ class _MyTemplatePageState extends State<MyTemplatePage> {
                 hintText: '条目名称',
               ),
               controller: controller,
+              focusNode: focusNode,
             ),
           ),
         ),
@@ -162,10 +148,14 @@ class _MyTemplatePageState extends State<MyTemplatePage> {
 
   void _addTemplateItem() {
     var controller = TextEditingController();
+    var focusNode = FocusNode();
     controllers.add(controller);
+    focusNodes.add(focusNode);
     controllerKeys.add(keyCount.toString());
     keyCount++;
     setState(() {});
+    focusNode.requestFocus();
+    _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
   }
 
   void _saveTemplateItems() async {
