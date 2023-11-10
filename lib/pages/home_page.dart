@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as path;
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -26,6 +28,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  String userCacheDir = '';
   Map<String, dynamic> itemsInfo = {};
   List<String> itemsId = [];
   SshServerInfo serverInfo = SshServerInfo(
@@ -272,8 +275,7 @@ class _MyHomePageState extends State<MyHomePage> {
       child: ListTile(
         visualDensity:
             const VisualDensity(vertical: VisualDensity.maximumDensity),
-        leading: const Image(
-            image: AssetImage('assets/images/image_loading_failed.png')),
+        leading: itemImage(itemsId[index]),
         title: Text(itemsId[index]),
         subtitle: Text(itemsInfo[itemsId[index]]),
         trailing: const Icon(Icons.keyboard_arrow_right_outlined),
@@ -299,12 +301,15 @@ class _MyHomePageState extends State<MyHomePage> {
 
     pref = await loadUserPreferences();
     serverInfo = loadSshServerInfoFromPref(pref);
+    var cacheDir = await getApplicationCacheDirectory();
+    userCacheDir = path.join(cacheDir.path, serverInfo.username);
     var result = await downloadJsonFromServer();
     var mainJsonPath = result[1];
     itemsInfo = jsonDecode(File(mainJsonPath).readAsStringSync());
     itemsId.clear();
     for (var key in itemsInfo.keys) {
       itemsId.add(key);
+      downloadFirstImage(key);
     }
     setState(() {});
     if (!context.mounted) return;
@@ -315,5 +320,20 @@ class _MyHomePageState extends State<MyHomePage> {
         action: SnackBarAction(label: '好', onPressed: () {}));
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
+  }
+
+  Image itemImage(String itemId) {
+    var tempImageDir = path.join(userCacheDir, 'tempImages');
+    var fileList = Directory(tempImageDir).listSync();
+    for (var file in fileList) {
+      if (path.basenameWithoutExtension(file.path) == itemId) {
+        return Image.file(
+          File(file.path),
+          width: MediaQuery.of(context).size.width / 4,
+        );
+      }
+    }
+    return const Image(
+        image: AssetImage('assets/images/image_loading_failed.png'));
   }
 }
