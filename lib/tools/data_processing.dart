@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:archive/archive_io.dart';
 import 'package:flutter/material.dart';
+import 'package:fuzzywuzzy/fuzzywuzzy.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
@@ -63,6 +64,19 @@ Future<bool> checkIdValidity(String itemId) async {
   } else {
     return true;
   }
+}
+
+Map<String, dynamic> fuzzySearchKeyword(
+    Map<String, dynamic> originalJson, String keyword, int scoreBound) {
+  Map<String, dynamic> siftedJson = {};
+  for (var key in originalJson.keys) {
+    var score = tokenSetPartialRatio(
+        originalJson[key].toString().toLowerCase(), keyword.toLowerCase());
+    if (score >= scoreBound) {
+      siftedJson[key] = originalJson[key];
+    }
+  }
+  return siftedJson;
 }
 
 // 以下 zip 函数在 Windows 平台下以 GBK 编码，实现中文名称不乱码

@@ -1,12 +1,16 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
+import 'package:fuzzy/fuzzy.dart';
+import 'package:fuzzywuzzy/fuzzywuzzy.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:stock_managing/tools/data_processing.dart';
 import 'package:stock_managing/tools/my_ssh.dart';
+import 'package:stock_managing/tools/my_widgets.dart';
 
 import 'package:stock_managing/tools/server_communication.dart';
 
@@ -37,12 +41,13 @@ class _ItemDetailsPageState extends State<ItemDetailsPage> {
   }
 
   void _loadData(String itemId) async {
-    var snackBar = SnackBar(
-        content: const Text('数据加载中，请稍候……'),
-        duration: const Duration(days: 365),
-        action: SnackBarAction(label: '好', onPressed: () {}));
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+    // var snackBar = SnackBar(
+    //     content: const Text('数据加载中，请稍候……'),
+    //     duration: const Duration(days: 365),
+    //     action: SnackBarAction(label: '好', onPressed: () {}));
+    // if (!context.mounted) return;
+    // ScaffoldMessenger.of(context).showSnackBar(snackBar);
+    showModalMessage(context, '数据加载中，请稍候……', false);
     var result = await Future.wait([loadItemInfo(widget.itemId)]);
     var itemInfo = result[0];
     json = itemInfo[0];
@@ -54,7 +59,8 @@ class _ItemDetailsPageState extends State<ItemDetailsPage> {
     }
     setState(() {});
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).removeCurrentSnackBar();
+    // ScaffoldMessenger.of(context).removeCurrentSnackBar();
+    Navigator.pop(context);
   }
 
   @override

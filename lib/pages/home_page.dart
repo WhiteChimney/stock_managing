@@ -28,6 +28,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   String userCacheDir = '';
   Map<String, dynamic> itemsInfo = {};
   List<String> itemsId = [];
@@ -38,7 +39,6 @@ class _MyHomePageState extends State<MyHomePage> {
     'password',
   );
   late SharedPreferences pref;
-  bool alerted = false;
 
   @override
   void initState() {
@@ -116,6 +116,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: _scaffoldKey,
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
@@ -133,8 +134,14 @@ class _MyHomePageState extends State<MyHomePage> {
             DrawerHeader(
               child: Column(
                 children: [
-                  const Text('当前用户'),
-                  Text(serverInfo.username),
+                  const Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: Text('当前用户', textScaleFactor: 1.5),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text(serverInfo.username, textScaleFactor: 2),
+                  ),
                 ],
               ),
             ),
@@ -146,35 +153,11 @@ class _MyHomePageState extends State<MyHomePage> {
               },
             ),
             ListTile(
-              title: const Text('搜索'),
-              onTap: () => showDialog(
-                  context: context,
-                  builder: (context) {
-                    return AlertDialog(
-                      title: const Text('请输入关键词进行搜索'),
-                      content: const Text('敬请期待'),
-                      actions: <Widget>[
-                        TextButton(
-                            child: const Text(
-                              '取消',
-                              style: TextStyle(color: Colors.grey),
-                            ),
-                            onPressed: () {
-                              Navigator.pop(context, "取消");
-                            }),
-                        TextButton(
-                          child: const Text(
-                            '确定',
-                            style: TextStyle(color: Colors.blue),
-                          ),
-                          onPressed: () {
-                            Navigator.pop(context, "确定");
-                          },
-                        ),
-                      ],
-                    );
-                  }),
-            ),
+                title: const Text('搜索'),
+                onTap: () {
+                  _scaffoldKey.currentState!.closeDrawer();
+                  _showSearchDialog();
+                }),
             ListTile(
               title: const Text('模板设置'),
               onTap: () {
@@ -280,7 +263,6 @@ class _MyHomePageState extends State<MyHomePage> {
         subtitle: Text(itemsInfo[itemsId[index]]),
         trailing: const Icon(Icons.keyboard_arrow_right_outlined),
         onTap: () async {
-          // List itemInfo = await loadItemInfo(itemsId[index]);
           if (!context.mounted) return;
           Navigator.of(context).push(MaterialPageRoute(
               builder: (context) => ItemDetailsPage(
@@ -324,16 +306,89 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Image itemImage(String itemId) {
     var tempImageDir = path.join(userCacheDir, 'tempImages');
+    if (!Directory(tempImageDir).existsSync()) {
+      Directory(tempImageDir).createSync(recursive: true);
+    }
     var fileList = Directory(tempImageDir).listSync();
     for (var file in fileList) {
       if (path.basenameWithoutExtension(file.path) == itemId) {
         return Image.file(
           File(file.path),
           width: MediaQuery.of(context).size.width / 4,
+          fit: BoxFit.contain,
         );
       }
     }
     return const Image(
         image: AssetImage('assets/images/image_loading_failed.png'));
+  }
+
+  TextEditingController searchController = TextEditingController();
+  double _scoreBound = 50.0;
+  void _showSearchDialog() {
+    showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text('输入关键词进行筛选'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: searchController,
+                  enabled: true,
+                  maxLines: 1,
+                  decoration: const InputDecoration(
+                      icon: Icon(Icons.catching_pokemon),
+                      border: UnderlineInputBorder(),
+                      hintText: '模糊搜索'),
+                ),
+                StatefulBuilder(builder: (context, state) {
+                  return Slider(
+                    value: _scoreBound,
+                    max: 100,
+                    divisions: 100,
+                    label: _scoreBound.round().toString(),
+                    onChanged: (double value) {
+                      state(() {
+                        _scoreBound = value;
+                      });
+                    },
+                  );
+                }),
+                const Padding(
+                  padding: EdgeInsets.all(8.0),
+                  child: Text('搜索模糊度，越往右匹配越精确'),
+                ),
+              ],
+            ),
+            actions: <Widget>[
+              TextButton(
+                  child: const Text(
+                    '取消',
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                  onPressed: () {
+                    Navigator.pop(context);
+                  }),
+              TextButton(
+                child: const Text(
+                  '确定',
+                  style: TextStyle(color: Colors.blue),
+                ),
+                onPressed: () {
+                  var originalJson = jsonDecode(
+                      File(path.join(userCacheDir, 'stockings', 'items.json'))
+                          .readAsStringSync());
+                  itemsInfo = fuzzySearchKeyword(
+                      originalJson, searchController.text, _scoreBound.toInt());
+                  itemsId = itemsInfo.keys.toList();
+                  setState(() {});
+                  Navigator.pop(context);
+                },
+              ),
+            ],
+          );
+        });
   }
 }
