@@ -15,6 +15,7 @@ import 'package:stock_managing/pages/settings_page.dart';
 import 'package:stock_managing/tools/app_provider.dart';
 import 'package:stock_managing/tools/data_processing.dart';
 import 'package:stock_managing/tools/my_ssh.dart';
+import 'package:stock_managing/tools/my_widgets.dart';
 import 'package:stock_managing/tools/prepare_repository.dart';
 import 'package:stock_managing/tools/server_communication.dart';
 
@@ -58,27 +59,19 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _sshServerTest() async {
-    var snackBar = SnackBar(
-        content: const Text('测试与服务器的连接情况……'),
-        duration: const Duration(days: 365),
-        action: SnackBarAction(label: '好', onPressed: () {}));
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+    showModalMessage(context, '测试与服务器的连接情况……', false);
     var pref = await loadUserPreferences();
     var serverInfo = loadSshServerInfoFromPref(pref);
     var res = await Future.wait([sshTryServer(serverInfo)]);
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).removeCurrentSnackBar();
+    Navigator.pop(context);
     var result = res[0];
     if (result[0]) {
-      const snackBar2 =
-          SnackBar(content: Text('服务器连接正常！'), duration: Duration(seconds: 2));
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(snackBar2);
+      showModalMessage(context, '服务器连接正常！', true);
       await Future.wait([prepareRemoteRepository(), prepareLocalRepository()]);
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).removeCurrentSnackBar();
       _downloadItemsInfo();
+      if (!context.mounted) return;
+      Navigator.pop(context);
     } else {
       if (!context.mounted) return;
       showDialog(
@@ -186,7 +179,7 @@ class _MyHomePageState extends State<MyHomePage> {
           SliverList(
             delegate: SliverChildBuilderDelegate(
               (BuildContext context, int index) {
-                return generateItemView(index);
+                return generateItemView(itemsInfo.length - 1 - index);
               },
               childCount: itemsInfo.length,
             ),
@@ -194,13 +187,14 @@ class _MyHomePageState extends State<MyHomePage> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
+        onPressed: () async {
+          var result = await Navigator.push(
               context,
               MaterialPageRoute(
                   builder: (context) => const EditItemPage(
                         itemId: '',
                       )));
+          if (result) _downloadItemsInfo();
         },
         tooltip: '添加物品',
         child: const Icon(Icons.add),
@@ -233,10 +227,11 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       confirmDismiss: (direction) async {
         if (direction == DismissDirection.startToEnd) {
-          Navigator.of(context).push(MaterialPageRoute(
+          var result = await Navigator.of(context).push(MaterialPageRoute(
               builder: (context) => EditItemPage(
                     itemId: itemsId[index],
                   )));
+          if (result) _downloadItemsInfo();
           return false;
         } else {
           bool delete = true;
@@ -274,13 +269,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _downloadItemsInfo() async {
-    var snackBar = SnackBar(
-        content: const Text('数据更新中……'),
-        duration: const Duration(days: 365),
-        action: SnackBarAction(label: '好', onPressed: () {}));
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(snackBar);
-
+    showModalMessage(context, '数据更新中……', false);
     pref = await loadUserPreferences();
     serverInfo = loadSshServerInfoFromPref(pref);
     var cacheDir = await getApplicationCacheDirectory();
@@ -291,17 +280,13 @@ class _MyHomePageState extends State<MyHomePage> {
     itemsId.clear();
     for (var key in itemsInfo.keys) {
       itemsId.add(key);
-      downloadFirstImage(key);
+      downloadFirstImage(key).whenComplete(() => setState(() {}));
     }
+    if (!context.mounted) return;
+    Navigator.pop(context);
+    showModalMessage(context, '更新成功！', true);
+    Future.delayed(const Duration(seconds: 1), () => Navigator.pop(context));
     setState(() {});
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).removeCurrentSnackBar();
-    snackBar = SnackBar(
-        content: const Text('更新成功！'),
-        duration: const Duration(seconds: 1),
-        action: SnackBarAction(label: '好', onPressed: () {}));
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 
   Image itemImage(String itemId) {
@@ -319,8 +304,8 @@ class _MyHomePageState extends State<MyHomePage> {
         );
       }
     }
-    return const Image(
-        image: AssetImage('assets/images/image_loading_failed.png'));
+    return Image.asset('assets/images/image_loading_failed.png',
+        width: MediaQuery.of(context).size.width / 4, fit: BoxFit.contain);
   }
 
   TextEditingController searchController = TextEditingController();
@@ -358,7 +343,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 }),
                 const Padding(
                   padding: EdgeInsets.all(8.0),
-                  child: Text('搜索模糊度，越往右匹配越精确'),
+                  child: Text('拖动设置搜索模糊度，越往右匹配越精确'),
                 ),
               ],
             ),
@@ -377,6 +362,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   style: TextStyle(color: Colors.blue),
                 ),
                 onPressed: () {
+                  if (searchController.text == '') return;
                   var originalJson = jsonDecode(
                       File(path.join(userCacheDir, 'stockings', 'items.json'))
                           .readAsStringSync());

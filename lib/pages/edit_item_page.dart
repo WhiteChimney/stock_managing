@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 
-// import 'package:camera/camera.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
@@ -9,7 +8,6 @@ import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:image_picker/image_picker.dart';
 
-// import 'package:stock_managing/tools/my_cameras.dart';
 import 'package:stock_managing/tools/data_processing.dart';
 import 'package:stock_managing/tools/my_ssh.dart';
 import 'package:stock_managing/tools/my_widgets.dart';
@@ -62,12 +60,6 @@ class _EditItemPageState extends State<EditItemPage> {
   }
 
   void _loadData(String itemId) async {
-    // var snackBar = SnackBar(
-    //     content: const Text('数据加载中，请稍候……'),
-    //     duration: const Duration(days: 365),
-    //     action: SnackBarAction(label: '好', onPressed: () {}));
-    // if (!context.mounted) return;
-    // ScaffoldMessenger.of(context).showSnackBar(snackBar);
     showModalMessage(context, '数据加载中，请稍候……', false);
     var itemInfo = await loadItemInfo(widget.itemId);
     json = itemInfo[0];
@@ -86,7 +78,6 @@ class _EditItemPageState extends State<EditItemPage> {
     }
     setState(() {});
     if (!context.mounted) return;
-    // ScaffoldMessenger.of(context).removeCurrentSnackBar();
     Navigator.pop(context);
   }
 
@@ -123,21 +114,13 @@ class _EditItemPageState extends State<EditItemPage> {
                 onPressed: () async {
                   if (widget.itemId.isEmpty) {
                     if (!(await checkIdValidity(idController.text))) {
-                      const snackBar = SnackBar(
-                          content: Text('物品 ID 号为空或与已有物品重复！'),
-                          duration: Duration(seconds: 2));
                       if (!context.mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                      showModalMessage(context, '物品 ID 号为空或与已有物品重复！', true);
                       return;
                     }
                   }
-                  // var snackBar = SnackBar(
-                  //     content: const Text('文件上传中，请稍候……'),
-                  //     duration: const Duration(days: 365),
-                  //     action: SnackBarAction(label: '好', onPressed: () {}));
                   if (!context.mounted) return;
-                  // ScaffoldMessenger.of(context).showSnackBar(snackBar);
-                  showModalMessage(context, '文件上传中，请稍候……', true);
+                  showModalMessage(context, '文件上传中，请稍候……', false);
                   List<String> labelList = [];
                   List<String> contentList = [];
                   for (int i = 0; i < labelControllers.length; i++) {
@@ -149,8 +132,8 @@ class _EditItemPageState extends State<EditItemPage> {
                         labelList, contentList, picPaths, filePaths)
                   ]);
                   if (!context.mounted) return;
-                  // ScaffoldMessenger.of(context).removeCurrentSnackBar();
                   Navigator.pop(context);
+                  Navigator.pop(context, true);
                 },
                 icon: const Icon(Icons.check)),
           ],
@@ -168,7 +151,7 @@ class _EditItemPageState extends State<EditItemPage> {
                 Directory(jsonDir).deleteSync(recursive: true);
               }
               if (!context.mounted) return;
-              Navigator.pop(context);
+              Navigator.pop(context, false);
             },
           )),
       body: GestureDetector(
@@ -244,13 +227,47 @@ class _EditItemPageState extends State<EditItemPage> {
                 childCount: filePaths.length,
               ),
             ),
-            SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (BuildContext context, int index) {
-                  return generateEntryWidget(labelControllers[index],
-                      contentControllers[index], focusNodes[index]);
-                },
-                childCount: labelControllers.length,
+            SliverReorderableList(
+              itemBuilder: (context, index) => generateEntryWidget(
+                  labelControllers[index],
+                  contentControllers[index],
+                  focusNodes[index]),
+              itemCount: labelControllers.length,
+              onReorder: (int oldIndex, int newIndex) {
+                if (oldIndex < newIndex) {
+                  newIndex -= 1;
+                }
+                var child = labelControllers.removeAt(oldIndex);
+                labelControllers.insert(newIndex, child);
+                var focusNode = focusNodes.removeAt(oldIndex);
+                focusNodes.insert(newIndex, focusNode);
+                var contentController = contentControllers.removeAt(oldIndex);
+                contentControllers.insert(newIndex, contentController);
+                setState(() {});
+              },
+            ),
+            // SliverList(
+            //   delegate: SliverChildBuilderDelegate(
+            //     (BuildContext context, int index) {
+            //       return generateEntryWidget(labelControllers[index],
+            //           contentControllers[index], focusNodes[index]);
+            //     },
+            //     childCount: labelControllers.length,
+            //   ),
+            // ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: ElevatedButton(
+                  child: const Text('修改条目顺序'),
+                  onPressed: () {},
+                ),
+              ),
+            ),
+            const SliverToBoxAdapter(
+              child: SizedBox(
+                child: null,
+                height: 400,
               ),
             ),
           ],
@@ -267,6 +284,7 @@ class _EditItemPageState extends State<EditItemPage> {
   Column generateEntryWidget(TextEditingController labelController,
       TextEditingController contentController, FocusNode focusNode) {
     return Column(
+      key: ValueKey(labelController.text),
       children: [
         Padding(
           padding: const EdgeInsets.all(8.0),
@@ -387,26 +405,32 @@ class _EditItemPageState extends State<EditItemPage> {
     }
   }
 
-  Column generatePictureWidget(String picPath) {
-    return Column(
-      children: [
-        Image.file(
-          File(picPath),
-          height: 136,
-          errorBuilder:
-              (BuildContext context, Object exception, StackTrace? stackTrace) {
-            return const Image(
-                image: AssetImage('assets/images/image_loading_failed.png'));
-          },
-        ),
-        IconButton(
-          onPressed: () {
-            picPaths.remove(picPath);
-            setState(() {});
-          },
-          icon: const Icon(Icons.delete),
-        ),
-      ],
+  GestureDetector generatePictureWidget(String picPath) {
+    return GestureDetector(
+      onTap: () {
+        print('Pictrue ${picPath} is tapped. ');
+        // Now zoom the picture.
+      },
+      child: Column(
+        children: [
+          Image.file(
+            File(picPath),
+            height: 136,
+            errorBuilder: (BuildContext context, Object exception,
+                StackTrace? stackTrace) {
+              return const Image(
+                  image: AssetImage('assets/images/image_loading_failed.png'));
+            },
+          ),
+          IconButton(
+            onPressed: () {
+              picPaths.remove(picPath);
+              setState(() {});
+            },
+            icon: const Icon(Icons.delete),
+          ),
+        ],
+      ),
     );
   }
 

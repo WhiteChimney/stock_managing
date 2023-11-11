@@ -14,8 +14,8 @@ void showModalMessage(BuildContext context, String msg, bool showCloseButton) {
         icon: const Icon(Icons.close)));
   }
   showModalBottomSheet<void>(
-    enableDrag: false,
-    isDismissible: false,
+    enableDrag: showCloseButton,
+    isDismissible: showCloseButton,
     context: context,
     builder: (BuildContext context) {
       return Container(

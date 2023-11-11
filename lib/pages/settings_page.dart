@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:stock_managing/tools/my_ssh.dart';
 import 'package:stock_managing/tools/data_processing.dart';
+import 'package:stock_managing/tools/my_widgets.dart';
 import 'package:stock_managing/tools/prepare_repository.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -148,12 +149,8 @@ class _SettingsPageState extends State<SettingsPage> {
                 child: ElevatedButton(
                     onPressed: () async {
                       var result = await sshTryServer(serverInfo);
-                      final snackBar = SnackBar(
-                          content: Text(result[1]),
-                          duration: const Duration(seconds: 5),
-                          action: SnackBarAction(label: '好', onPressed: () {}));
                       if (!context.mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                      showModalMessage(context, result[1], true);
                     },
                     child: const Text('测试服务器连接情况')),
               ),

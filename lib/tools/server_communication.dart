@@ -21,19 +21,22 @@ Future<List> downloadJsonFromServer() async {
   var result = await sshConnectServer(serverInfo);
   if (!result[0]) return [result[0], result[1]];
   client = result[2];
-  var sftp = await client.sftp();
 
   // 将远程 items.json 文件下载下来
   var remoteMainJson = ('/home/${serverInfo.username}/stockings/items.json');
   var cacheDir = await getApplicationCacheDirectory();
   var localMainJson =
       path.join(cacheDir.path, serverInfo.username, 'stockings', 'items.json');
+  var localMainJsonTemp = path.join(
+      cacheDir.path, serverInfo.username, 'stockings', 'items_temp.json');
   Map<String, dynamic> mainJson =
       jsonDecode(await File(localMainJson).readAsString());
-  final fRemoteMainJson = await sftp.open(remoteMainJson);
-  final content = await fRemoteMainJson.readBytes();
-  mainJson.addAll(jsonDecode(latin1.decode(content)));
-  await File(localMainJson).writeAsString(jsonEncode(mainJson));
+  result = await sftpReceiveFile(client, remoteMainJson, localMainJsonTemp);
+  if (!result[0]) return [result[0], result[1], localMainJson];
+  var content = await File(localMainJsonTemp).readAsString();
+  mainJson.addAll(jsonDecode(content));
+  await File(localMainJsonTemp).delete();
+  File(localMainJson).writeAsStringSync(jsonEncode(mainJson));
 
   result = await sshDisconnectServer(client);
   return [result, localMainJson];
@@ -286,7 +289,6 @@ Future<List> saveItemInfo(
   for (int index = 0; index < picPaths.length; index++) {
     var picRead = File(picPaths[index]);
     var picExt = path.extension(picRead.path);
-    // await picRead.copy(path.join(imgDir, '${itemId}_${index}${picExt}'));
     filesToBeUploaded[picRead.path] =
         '/home/${serverInfo.username}/stockings/items/$itemId/images/${itemId}_$index$picExt';
   }
@@ -365,6 +367,15 @@ Future<List> deleteItem(String itemId) async {
       jsonDecode(File(localJsonFile).readAsStringSync());
   json.remove(itemId);
   File(localJsonFile).writeAsStringSync(jsonEncode(json));
+
+  // 删除缓存图片
+  var cacheImageDir =
+      path.join(cacheDir.path, serverInfo.username, 'tempImages');
+  var imageList = Directory(cacheImageDir).listSync();
+  for (var image in imageList) {
+    var imageName = path.withoutExtension(path.basename(image.path));
+    if (imageName == itemId) image.delete();
+  }
 
   // 配置同步至服务器
   SSHClient client = result[2];
