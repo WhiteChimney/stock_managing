@@ -7,6 +7,7 @@ import 'package:path/path.dart' as path;
 import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:stock_managing/pages/reorder_entries_page.dart';
 
 import 'package:stock_managing/tools/data_processing.dart';
 import 'package:stock_managing/tools/my_ssh.dart';
@@ -260,7 +261,16 @@ class _EditItemPageState extends State<EditItemPage> {
                 padding: const EdgeInsets.all(8.0),
                 child: ElevatedButton(
                   child: const Text('修改条目顺序'),
-                  onPressed: () {},
+                  onPressed: () async {
+                    var res =
+                        await Navigator.of(context).push(MaterialPageRoute(
+                            builder: (context) => ReorderEntriesPage(
+                                  originalEntries: [
+                                    for (var c in labelControllers) c.text
+                                  ],
+                                )));
+                    if (res != null) _reorderItemEntries(res);
+                  },
                 ),
               ),
             ),
@@ -405,32 +415,26 @@ class _EditItemPageState extends State<EditItemPage> {
     }
   }
 
-  GestureDetector generatePictureWidget(String picPath) {
-    return GestureDetector(
-      onTap: () {
-        print('Pictrue ${picPath} is tapped. ');
-        // Now zoom the picture.
-      },
-      child: Column(
-        children: [
-          Image.file(
-            File(picPath),
-            height: 136,
-            errorBuilder: (BuildContext context, Object exception,
-                StackTrace? stackTrace) {
-              return const Image(
-                  image: AssetImage('assets/images/image_loading_failed.png'));
-            },
-          ),
-          IconButton(
-            onPressed: () {
-              picPaths.remove(picPath);
-              setState(() {});
-            },
-            icon: const Icon(Icons.delete),
-          ),
-        ],
-      ),
+  Column generatePictureWidget(String picPath) {
+    return Column(
+      children: [
+        Image.file(
+          File(picPath),
+          height: 136,
+          errorBuilder:
+              (BuildContext context, Object exception, StackTrace? stackTrace) {
+            return const Image(
+                image: AssetImage('assets/images/image_loading_failed.png'));
+          },
+        ),
+        IconButton(
+          onPressed: () {
+            picPaths.remove(picPath);
+            setState(() {});
+          },
+          icon: const Icon(Icons.delete),
+        ),
+      ],
     );
   }
 
@@ -460,5 +464,20 @@ class _EditItemPageState extends State<EditItemPage> {
         ),
       ],
     );
+  }
+
+  void _reorderItemEntries(List<int> newOrders) {
+    List<TextEditingController> newLabelControllers = [];
+    List<TextEditingController> newContentControllers = [];
+    List<FocusNode> newFocusNodes = [];
+    for (int index = 0; index < labelControllers.length; index++) {
+      newLabelControllers.add(labelControllers[newOrders[index]]);
+      newContentControllers.add(contentControllers[newOrders[index]]);
+      newFocusNodes.add(focusNodes[newOrders[index]]);
+    }
+    labelControllers = newLabelControllers;
+    contentControllers = newContentControllers;
+    focusNodes = newFocusNodes;
+    setState(() {});
   }
 }

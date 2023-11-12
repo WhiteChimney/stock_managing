@@ -63,6 +63,13 @@ Future<List> downloadFirstImage(String itemId) async {
   // 该情况为新建物品，直接返回空白列表
   if (itemId == '') return [false, null, picPath];
 
+  // 先看缓存目录下有没有已下载过的图片，有则直接返回缓存图片
+  var picList = Directory(tempImageDir).listSync();
+  for (var pic in picList) {
+    var picName = path.withoutExtension(path.basename(pic.path));
+    if (picName == itemId) return [true, 'found local cached image', pic.path];
+  }
+
   // 其次为已存在的物品，需要获取远程目录下所有图片信息
   var result = await sshConnectServer(serverInfo);
   if (!result[0]) return [false, result[1], picPath];
@@ -72,19 +79,37 @@ Future<List> downloadFirstImage(String itemId) async {
   if (!result[0]) return [false, result[1], picPath];
   var remotePicList = result[2];
 
+  var tempPicPath = '';
   for (var remotePic in remotePicList) {
     var mimetype = lookupMimeType(remotePic);
     if (mimetype != null && mimetype.startsWith('image/')) {
       picPath = path.join(tempImageDir, '$itemId${path.extension(remotePic)}');
+      tempPicPath = '$picPath.tmp';
+      if (File(tempPicPath).existsSync()) tempPicPath = '$tempPicPath.tmp';
       result = await sftpReceiveFile(
           client,
           '/home/${serverInfo.username}/stockings/items/$itemId/images/$remotePic',
-          picPath);
-      if (!result[0]) return [false, result[1], ''];
-      break;
+          tempPicPath);
+      if (!result[0]) {
+        return [false, result[1], ''];
+      } else {
+        File(tempPicPath).copySync(picPath);
+        File(tempPicPath).delete();
+      }
     }
   }
+
   return [true, result[1], picPath];
+}
+
+void clearCacheImages() async {
+  SharedPreferences pref = await loadUserPreferences();
+  SshServerInfo serverInfo = loadSshServerInfoFromPref(pref);
+  var cacheDir = await getApplicationCacheDirectory();
+  var tempImageDir =
+      path.join(cacheDir.path, serverInfo.username, 'tempImages');
+  Directory(tempImageDir).deleteSync(recursive: true);
+  await Directory(tempImageDir).create(recursive: true);
 }
 
 Future<List> loadItemInfo(String itemId) async {

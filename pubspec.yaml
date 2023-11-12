@@ -46,8 +46,8 @@ dependencies:
   image_picker: ^1.0.4
   share_plus: ^7.2.1
   file_selector: ^1.0.1
-  fuzzy: ^0.5.1
   fuzzywuzzy: ^1.1.6
+  easy_image_viewer: ^1.2.1
 
 dev_dependencies:
   flutter_test:

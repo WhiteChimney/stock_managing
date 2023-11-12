@@ -17,6 +17,7 @@ import 'package:stock_managing/tools/data_processing.dart';
 import 'package:stock_managing/tools/my_ssh.dart';
 import 'package:stock_managing/tools/my_widgets.dart';
 import 'package:stock_managing/tools/prepare_repository.dart';
+import 'package:stock_managing/tools/scroll_index_widget.dart';
 import 'package:stock_managing/tools/server_communication.dart';
 
 class MyHomePage extends StatefulWidget {
@@ -33,6 +34,7 @@ class _MyHomePageState extends State<MyHomePage> {
   String userCacheDir = '';
   Map<String, dynamic> itemsInfo = {};
   List<String> itemsId = [];
+  List<bool> imagesDownloading = [];
   SshServerInfo serverInfo = SshServerInfo(
     '127.0.0.1',
     22,
@@ -40,6 +42,8 @@ class _MyHomePageState extends State<MyHomePage> {
     'password',
   );
   late SharedPreferences pref;
+  final int preLoadImageCount = 10;
+  int currentFirstIndex = 1;
 
   @override
   void initState() {
@@ -116,6 +120,7 @@ class _MyHomePageState extends State<MyHomePage> {
         actions: [
           IconButton(
               onPressed: () async {
+                clearCacheImages();
                 _downloadItemsInfo();
               },
               icon: const Icon(Icons.refresh)),
@@ -174,17 +179,20 @@ class _MyHomePageState extends State<MyHomePage> {
           ],
         ),
       ),
-      body: CustomScrollView(
-        slivers: <Widget>[
-          SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (BuildContext context, int index) {
-                return generateItemView(itemsInfo.length - 1 - index);
-              },
-              childCount: itemsInfo.length,
-            ),
-          ),
-        ],
+      body: ScrollIndexWidget(
+        child: ListView.builder(
+          itemBuilder: (context, index) {
+            return generateItemView(itemsInfo.length - 1 - index);
+          },
+          scrollDirection: Axis.vertical,
+          itemCount: itemsInfo.length,
+        ),
+        callback: (firstIndex, lastIndex) {
+          if (firstIndex == currentFirstIndex) return;
+          currentFirstIndex = firstIndex;
+          _loadCacheImage(itemsInfo.length - lastIndex - 1,
+              itemsInfo.length - firstIndex - 1);
+        },
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
@@ -248,7 +256,10 @@ class _MyHomePageState extends State<MyHomePage> {
       },
       onDismissed: (_) async {
         await Future.wait([deleteItem(itemsId[index])]);
-        _downloadItemsInfo();
+        itemsInfo.remove(itemsId[index]);
+        itemsId.removeAt(index);
+        imagesDownloading.removeAt(index);
+        setState(() {});
       },
       child: ListTile(
         visualDensity:
@@ -278,15 +289,28 @@ class _MyHomePageState extends State<MyHomePage> {
     var mainJsonPath = result[1];
     itemsInfo = jsonDecode(File(mainJsonPath).readAsStringSync());
     itemsId.clear();
+    imagesDownloading.clear();
+    clearCacheImages();
     for (var key in itemsInfo.keys) {
       itemsId.add(key);
-      downloadFirstImage(key).whenComplete(() => setState(() {}));
+      imagesDownloading.add(false);
     }
+    setState(() {});
+
     if (!context.mounted) return;
     Navigator.pop(context);
     showModalMessage(context, '更新成功！', true);
     Future.delayed(const Duration(seconds: 1), () => Navigator.pop(context));
-    setState(() {});
+
+    late int startIndex;
+    int endIndex = itemsId.length - 1;
+    if (endIndex < preLoadImageCount) {
+      startIndex = 0;
+    } else {
+      startIndex = endIndex - preLoadImageCount + 1;
+    }
+    // _loadCacheImage(startIndex, endIndex).whenComplete(() => setState(() {}));
+    _loadCacheImage(startIndex, endIndex);
   }
 
   Image itemImage(String itemId) {
@@ -306,6 +330,18 @@ class _MyHomePageState extends State<MyHomePage> {
     }
     return Image.asset('assets/images/image_loading_failed.png',
         width: MediaQuery.of(context).size.width / 4, fit: BoxFit.contain);
+  }
+
+  void _loadCacheImage(int startIndex, int endIndex) {
+    // 注意是逆序加载
+    for (int index = endIndex; index >= startIndex; index--) {
+      if (imagesDownloading[index]) continue;
+      imagesDownloading[index] = true;
+      downloadFirstImage(itemsId[index]).whenComplete(() {
+        imagesDownloading[index] = false;
+        setState(() {});
+      });
+    }
   }
 
   TextEditingController searchController = TextEditingController();

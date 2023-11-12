@@ -129,6 +129,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "2.8.2"
+  easy_image_viewer:
+    dependency: "direct main"
+    description:
+      name: easy_image_viewer
+      sha256: "8d11a4630e9beb7aacf043c98da2dd4b3bc3b47aa4073d2016ba696376161272"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "1.2.1"
   fake_async:
     dependency: transitive
     description:
@@ -256,14 +264,6 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
-  fuzzy:
-    dependency: "direct main"
-    description:
-      name: fuzzy
-      sha256: af5fbd36f2f8de0663a5b562ef5ca209aea957e81a2f0e97f97475cfbed044ec
-      url: "https://pub.flutter-io.cn"
-    source: hosted
-    version: "0.5.1"
   fuzzywuzzy:
     dependency: "direct main"
     description:
@@ -637,14 +637,6 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "1.2.0"
-  stringr:
-    dependency: transitive
-    description:
-      name: stringr
-      sha256: "2846b6811c3cbb34c8937a35e623986e3fbf7203b3bb33ffe7f80e496ea3eff2"
-      url: "https://pub.flutter-io.cn"
-    source: hosted
-    version: "1.0.0"
   term_glyph:
     dependency: transitive
     description:

@@ -1,5 +1,7 @@
 import 'dart:io';
+import 'dart:ui';
 
+import 'package:easy_image_viewer/easy_image_viewer.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
@@ -108,7 +110,7 @@ class _ItemDetailsPageState extends State<ItemDetailsPage> {
                   itemBuilder: (context, index) {
                     return Padding(
                       padding: const EdgeInsets.all(8.0),
-                      child: generatePictureWidget(picPaths[index]),
+                      child: generatePictureWidget(index),
                     );
                   }),
             ),
@@ -170,16 +172,25 @@ class _ItemDetailsPageState extends State<ItemDetailsPage> {
     );
   }
 
-  Image generatePictureWidget(String pic) {
-    return Image.file(
-      File(pic),
-      height: 144,
-      errorBuilder:
-          (BuildContext context, Object exception, StackTrace? stackTrace) {
-        return const Image(
-            image: AssetImage('assets/images/image_loading_failed.png'));
-      },
-    );
+  GestureDetector generatePictureWidget(int index) {
+    return GestureDetector(
+        onTap: () {
+          MultiImageProvider multiImageProvider = MultiImageProvider(
+              [for (var pic in picPaths) Image.file(File(pic)).image],
+              initialIndex: index);
+
+          showImageViewerPager(context, multiImageProvider,
+              doubleTapZoomable: true, swipeDismissible: true);
+        },
+        child: Image.file(
+          File(picPaths[index]),
+          height: 144,
+          errorBuilder:
+              (BuildContext context, Object exception, StackTrace? stackTrace) {
+            return const Image(
+                image: AssetImage('assets/images/image_loading_failed.png'));
+          },
+        ));
   }
 
   Row generateFilesWidget(String file) {
