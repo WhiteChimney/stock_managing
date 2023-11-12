@@ -27,16 +27,18 @@ Future<List> downloadJsonFromServer() async {
   var cacheDir = await getApplicationCacheDirectory();
   var localMainJson =
       path.join(cacheDir.path, serverInfo.username, 'stockings', 'items.json');
-  var localMainJsonTemp = path.join(
-      cacheDir.path, serverInfo.username, 'stockings', 'items_temp.json');
-  Map<String, dynamic> mainJson =
-      jsonDecode(await File(localMainJson).readAsString());
-  result = await sftpReceiveFile(client, remoteMainJson, localMainJsonTemp);
+  // var localMainJsonTemp = path.join(
+  //     cacheDir.path, serverInfo.username, 'stockings', 'items_temp.json');
+  // Map<String, dynamic> mainJson =
+  //     jsonDecode(await File(localMainJson).readAsString());
+  // result = await sftpReceiveFile(client, remoteMainJson, localMainJsonTemp);
+  // if (!result[0]) return [result[0], result[1], localMainJson];
+  // var content = await File(localMainJsonTemp).readAsString();
+  // mainJson.addAll(jsonDecode(content));
+  // await File(localMainJsonTemp).delete();
+  // File(localMainJson).writeAsStringSync(jsonEncode(mainJson));
+  result = await sftpReceiveFile(client, remoteMainJson, localMainJson);
   if (!result[0]) return [result[0], result[1], localMainJson];
-  var content = await File(localMainJsonTemp).readAsString();
-  mainJson.addAll(jsonDecode(content));
-  await File(localMainJsonTemp).delete();
-  File(localMainJson).writeAsStringSync(jsonEncode(mainJson));
 
   result = await sshDisconnectServer(client);
   return [result, localMainJson];
