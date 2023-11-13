@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:ui';
 
 import 'package:easy_image_viewer/easy_image_viewer.dart';
 import 'package:file_selector/file_selector.dart';
