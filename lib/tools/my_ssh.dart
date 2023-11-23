@@ -38,6 +38,7 @@ Future<List> sshTryServer(SshServerInfo serverInfo) async {
     final socket = await SSHSocket.connect(
       serverInfo.ip,
       serverInfo.port,
+      timeout: const Duration(seconds: 5),
     );
     final client = SSHClient(
       socket,
