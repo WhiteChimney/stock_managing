@@ -110,7 +110,9 @@ void clearCacheImages() async {
   var cacheDir = await getApplicationCacheDirectory();
   var tempImageDir =
       path.join(cacheDir.path, serverInfo.username, 'tempImages');
-  Directory(tempImageDir).deleteSync(recursive: true);
+  if (File(tempImageDir).existsSync()) {
+    Directory(tempImageDir).deleteSync(recursive: true);
+  }
   await Directory(tempImageDir).create(recursive: true);
 }
 
